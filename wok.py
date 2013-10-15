@@ -62,13 +62,16 @@ class WOK:
     wokid = Identifier(record.uid, type='WOK', description='Web Of Knowledge')
     p.identifiers.append(wokid)
     
+    idtypes = {'Identifier.Isbn': 'ISBN',
+               'Identifier.Issn': 'ISSN',
+               'Identifier.Doi': 'DOI',
+              }
+    
     for pair in record.other:
-      if pair.label == 'Identifier.Isbn':
-        for isbn in pair.value:
-          p.identifiers.append(Identifier(isbn, type='ISBN'))
-      elif pair.label == 'Identifier.Issn':
-        for issn in pair.value:
-          p.identifiers.append(Identifier(issn, type='ISSN'))
+      if not pair.label in idtypes:
+        continue
+      for value in pair.value:
+        p.identifiers.append(Identifier(value, type=idtypes[pair.label]))
     
     return p
   
