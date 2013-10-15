@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from suds.client import Client
 from model import Publication, Author, Identifier
+import time
 
 class WOK:
   def __init__(self):
@@ -15,14 +16,14 @@ class WOK:
     self.session_id = self.auth.service.authenticate()
     self.search = Client(self.wsdl_search, headers={'Cookie': 'SID=' + self.session_id})
   
-  def _retrieveById(self, uid):
+  def _retrieve_by_id(self, uid):
     params = self.search.factory.create('retrieveParameters')
     params.firstRecord = 1
     params.count = 2
     return self.search.service.retrieveById(databaseId='WOK', uid=uid,
       queryLanguage='en', retrieveParameters=params)
   
-  def _convertToPublication(self, record):
+  def _convert_to_publication(self, record):
     def extract_label(group, label):
       for pair in group:
         if pair.label == label:
@@ -33,7 +34,9 @@ class WOK:
       l = extract_label(group, label)
       if l == None:
         return None
-      if len(l) != 1:
+      if len(l) == 0:
+        return None
+      if len(l) > 1:
         raise ValueError('Expecting single value only')
       return l[0]
     
@@ -68,6 +71,54 @@ class WOK:
           p.identifiers.append(Identifier(issn, type='ISSN'))
     
     return p
+  
+  def _convert_list(self, records):
+    return [self._convert_to_publication(x) for x in records]
+  
+  def retrieve_by_id(self, uid):
+    result = self._retrieve_by_id(uid)
+    if result.recordsFound != 1:
+      return None
+    return self._convert_to_publication(result.records[0])
+  
+  def _search(self, query, database_id='WOS', timespan=None):
+    query_params = self.search.factory.create('queryParameters')
+    query_params.databaseId = database_id
+    query_params.userQuery = query
+    query_params.queryLanguage = 'en'
+    
+    if timespan != None:
+      ts = self.search.factory.create('timeSpan')
+      ts.begin = timespan[0]
+      ts.end = timespan[1]
+      query_params.timeSpan = ts
+    
+    retr_params = self.search.factory.create('retrieveParameters')
+    retr_params.firstRecord = 1
+    retr_params.count = 100
+    first_result = self.search.service.search(query_params, retr_params)
+    
+    records = []
+    pages = first_result.recordsFound / retr_params.count
+    if first_result.recordsFound % retr_params.count > 0:
+      pages += 1
+    
+    records.extend(first_result.records)
+        
+    # retrieve additional records
+    for pagenum in range(1, pages):
+      retr_params.firstRecord += retr_params.count
+      time.sleep(1) # throttle
+      additional_result = self.search.service.retrieve(first_result.queryId, retr_params)
+      records.extend(additional_result.records)
+    
+    if len(records) < first_result.recordsFound:
+      raise ValueError('Failed retrieving all results')
+    
+    return records
+  
+  def search_by_author(self, author):
+    return self._convert_list(self._search(u'AU={}'.format(author)))
     
   def close(self):
     self.auth.service.closeSession()
@@ -82,8 +133,15 @@ class WOK:
 
 if __name__ == '__main__':
   with WOK() as wok:
-    result = wok._retrieveById('WOS:000308512600015')
-    print result
-    for record in result.records:
-      publication = wok._convertToPublication(record)
-      print publication
+    #print wok.search
+    #result = wok._retrieve_by_id('WOS:000308512600015')
+    #print result
+    #for record in result.records:
+    #  publication = wok._convert_to_publication(record)
+    #  print publication
+    results = wok._search('AU=Masarik J*')
+    for result in results:
+      print result
+    #publications = wok.search_by_author('Vinar T*')
+    #for publication in publications:
+    #  print publication
