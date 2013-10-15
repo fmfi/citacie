@@ -58,6 +58,9 @@ class WOK:
     p.pages = extract_single(record.source, 'Pages')
     p.volume = extract_single(record.source, 'Volume')
     p.series = extract_single(record.source, 'BookSeriesTitle')
+    p.issue = extract_single(record.source, 'Issue')
+    p.special_issue = extract_single(record.source, 'SpecialIssue')
+    p.supplement = extract_single(record.source, 'Supplement')
     
     wokid = Identifier(record.uid, type='WOK', description='Web Of Knowledge')
     p.identifiers.append(wokid)

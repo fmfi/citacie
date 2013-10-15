@@ -45,7 +45,7 @@ class Identifier(object):
     return self.__unicode__().encode('UTF-8')
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, urls=None, identifiers=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, urls=None, identifiers=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -64,6 +64,9 @@ class Publication(object):
     self.pages = pages
     self.volume = volume
     self.series = series
+    self.issue = issue
+    self.special_issue = special_issue
+    self.supplement = supplement
     if urls == None:
       self.urls = []
     elif isinstance(urls, types.StringTypes):
@@ -89,6 +92,12 @@ class Publication(object):
       r += u'  Published in: {}\n'.format(self.published_in)
     if self.pages:
       r += u'  Pages: {}\n'.format(self.pages)
+    if self.issue:
+      r += u'  Issue: {}\n'.format(self.issue)
+    if self.special_issue:
+      r += u'  Special issue: {}\n'.format(self.special_issue)
+    if self.supplement:
+      r += u'  Supplement: {}\n'.format(self.supplement)
     if self.volume:
       r += u'  Volume: {}\n'.format(self.volume)
     if self.series:
