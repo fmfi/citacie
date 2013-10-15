@@ -140,11 +140,27 @@ class WOK:
 if __name__ == '__main__':
   import argparse
   
+  def print_results(args, wok, results):
+    for result in results:
+      display_raw = args.raw
+      try:
+        print wok._convert_to_publication(result)
+      except:
+        print 'Failed to convert record:'
+        display_raw = True
+      if display_raw:
+        print result
+  
   def search(args, wok):
-    return wok._search(args.query)
+    print_results(args, wok, wok._search(args.query))
   
   def retrieve(args, wok):
-    return wok._retrieve_by_id(args.id).records
+    print_results(args, wok, wok._retrieve_by_id(args.id).records)
+  
+  def services(args, wok):
+    print wok.auth
+    print '-'*80
+    print wok.search
   
   parser = argparse.ArgumentParser()
   parser.add_argument('--raw', action='store_true', help='show raw results always')
@@ -159,16 +175,10 @@ if __name__ == '__main__':
   parser_retrieve.add_argument('id')
   parser_retrieve.set_defaults(func=retrieve)
   
+  parser_services = subparsers.add_parser('services')
+  parser_services.set_defaults(func=services)
+  
   args = parser.parse_args()
   
   with WOK() as wok:
-    results = args.func(args, wok)
-    for result in results:
-      display_raw = args.raw
-      try:
-        print wok._convert_to_publication(result)
-      except:
-        print 'Failed to convert record:'
-        display_raw = True
-      if display_raw:
-        print result
+    args.func(args, wok)
