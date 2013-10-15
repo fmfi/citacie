@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from suds.client import Client
+from model import Publication, Author, Identifier
 
 class WOK:
   def __init__(self):
@@ -20,6 +21,53 @@ class WOK:
     params.count = 2
     return self.search.service.retrieveById(databaseId='WOK', uid=uid,
       queryLanguage='en', retrieveParameters=params)
+  
+  def _convertToPublication(self, record):
+    def extract_label(group, label):
+      for pair in group:
+        if pair.label == label:
+          return pair.value      
+      return None
+    
+    def extract_single(group, label):
+      l = extract_label(group, label)
+      if l == None:
+        return None
+      if len(l) != 1:
+        raise ValueError('Expecting single value only')
+      return l[0]
+    
+    def parse_author(fullname):
+      parts = fullname.split(',', 1)
+      if len(parts) > 1:
+        names = parts[1].split()
+      else:
+        names = None
+      return Author(parts[0], names)
+    
+    title = u''.join(extract_label(record.title, 'Title'))
+    authors = extract_label(record.authors, 'Authors')
+    parsed_authors = [parse_author(x) for x in authors]
+    year = extract_single(record.source, 'Published.BiblioYear')
+    p = Publication(title, parsed_authors, year)
+    
+    p.published_in = extract_single(record.source, 'SourceTitle')
+    p.pages = extract_single(record.source, 'Pages')
+    p.volume = extract_single(record.source, 'Volume')
+    p.series = extract_single(record.source, 'BookSeriesTitle')
+    
+    wokid = Identifier(record.uid, type='WOK', description='Web Of Knowledge')
+    p.identifiers.append(wokid)
+    
+    for pair in record.other:
+      if pair.label == 'Identifier.Isbn':
+        for isbn in pair.value:
+          p.identifiers.append(Identifier(isbn, type='ISBN'))
+      elif pair.label == 'Identifier.Issn':
+        for issn in pair.value:
+          p.identifiers.append(Identifier(issn, type='ISSN'))
+    
+    return p
     
   def close(self):
     self.auth.service.closeSession()
@@ -34,4 +82,8 @@ class WOK:
 
 if __name__ == '__main__':
   with WOK() as wok:
-    print wok._retrieveById('WOS:000308512600015')
+    result = wok._retrieveById('WOS:000308512600015')
+    print result
+    for record in result.records:
+      publication = wok._convertToPublication(record)
+      print publication
