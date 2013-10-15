@@ -141,6 +141,8 @@ if __name__ == '__main__':
     return wok._retrieve_by_id(args.id).records
   
   parser = argparse.ArgumentParser()
+  parser.add_argument('--raw', action='store_true', help='show raw results always')
+  
   subparsers = parser.add_subparsers()
   
   parser_search = subparsers.add_parser('search')
@@ -156,8 +158,11 @@ if __name__ == '__main__':
   with WOK() as wok:
     results = args.func(args, wok)
     for result in results:
+      display_raw = args.raw
       try:
         print wok._convert_to_publication(result)
       except:
         print 'Failed to convert record:'
+        display_raw = True
+      if display_raw:
         print result
