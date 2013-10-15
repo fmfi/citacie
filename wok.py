@@ -132,16 +132,32 @@ class WOK:
     return False
 
 if __name__ == '__main__':
+  import argparse
+  
+  def search(args, wok):
+    return wok._search(args.query)
+  
+  def retrieve(args, wok):
+    return wok._retrieve_by_id(args.id).records
+  
+  parser = argparse.ArgumentParser()
+  subparsers = parser.add_subparsers()
+  
+  parser_search = subparsers.add_parser('search')
+  parser_search.add_argument('query')
+  parser_search.set_defaults(func=search)
+  
+  parser_retrieve = subparsers.add_parser('retrieve')
+  parser_retrieve.add_argument('id')
+  parser_retrieve.set_defaults(func=retrieve)
+  
+  args = parser.parse_args()
+  
   with WOK() as wok:
-    #print wok.search
-    #result = wok._retrieve_by_id('WOS:000308512600015')
-    #print result
-    #for record in result.records:
-    #  publication = wok._convert_to_publication(record)
-    #  print publication
-    results = wok._search('AU=Masarik J*')
+    results = args.func(args, wok)
     for result in results:
-      print result
-    #publications = wok.search_by_author('Vinar T*')
-    #for publication in publications:
-    #  print publication
+      try:
+        print wok._convert_to_publication(result)
+      except:
+        print 'Failed to convert record:'
+        print result
