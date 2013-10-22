@@ -38,7 +38,7 @@ class WOK:
         return None
       if len(l) > 1:
         raise ValueError('Expecting single value only')
-      return l[0]
+      return unicode(l[0])
     
     def parse_author(fullname):
       parts = fullname.split(',', 1)
@@ -50,7 +50,7 @@ class WOK:
     
     title = u''.join(extract_label(record.title, 'Title'))
     authors = extract_label(record.authors, 'Authors')
-    parsed_authors = [parse_author(x) for x in authors]
+    parsed_authors = [parse_author(unicode(x)) for x in authors]
     year = extract_single(record.source, 'Published.BiblioYear')
     p = Publication(title, parsed_authors, year)
     
@@ -62,7 +62,7 @@ class WOK:
     p.special_issue = extract_single(record.source, 'SpecialIssue')
     p.supplement = extract_single(record.source, 'Supplement')
     
-    wokid = Identifier(record.uid, type='WOK', description='Web Of Knowledge')
+    wokid = Identifier(unicode(record.uid), type='WOK', description='Web Of Knowledge')
     p.identifiers.append(wokid)
     
     idtypes = {'Identifier.Isbn': 'ISBN',
@@ -74,7 +74,7 @@ class WOK:
       if not pair.label in idtypes:
         continue
       for value in pair.value:
-        p.identifiers.append(Identifier(value, type=idtypes[pair.label]))
+        p.identifiers.append(Identifier(unicode(value), type=idtypes[pair.label]))
     
     return p
   
@@ -123,8 +123,16 @@ class WOK:
     
     return records
   
-  def search_by_author(self, author):
-    return self._convert_list(self._search(u'AU={}'.format(author)))
+  def search_by_author(self, surname, name=None, year=None):
+    # TODO escaping
+    query = u'AU=('
+    query += surname
+    if name is not None:
+      query += u' ' + name
+    query += u')'
+    if year is not None:
+      query += ' AND PY={}'.format(year)
+    return self._convert_list(self._search(query))
     
   def close(self):
     self.auth.service.closeSession()
@@ -141,15 +149,25 @@ if __name__ == '__main__':
   import argparse
   
   def print_results(args, wok, results):
+    if args.repr:
+      print '['
     for result in results:
       display_raw = args.raw
+      pub = None
       try:
-        print wok._convert_to_publication(result)
+        pub = wok._convert_to_publication(result)
       except:
         print 'Failed to convert record:'
         display_raw = True
+      if pub:
+        if args.repr:
+          print pub.repr(pretty=True) + ','
+        else:
+          print pub
       if display_raw:
         print result
+    if args.repr:
+      print ']'
   
   def search(args, wok):
     print_results(args, wok, wok._search(args.query))
@@ -164,6 +182,7 @@ if __name__ == '__main__':
   
   parser = argparse.ArgumentParser()
   parser.add_argument('--raw', action='store_true', help='show raw results always')
+  parser.add_argument('--repr', action='store_true', help='show python code instead of formatted result')
   
   subparsers = parser.add_subparsers()
   

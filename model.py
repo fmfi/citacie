@@ -18,6 +18,13 @@ class Author(object):
   
   def __str__(self):
     return self.__unicode__().encode('UTF-8')
+  
+  def __repr__(self):
+    r = 'Author({!r}'.format(self.surname)
+    if len(self.names) > 0:
+      r += ', names={!r}'.format(self.names)
+    r += ')'
+    return r
 
 class Identifier(object):
   def __init__(self, id, type=None, description=None):
@@ -43,6 +50,15 @@ class Identifier(object):
   
   def __str__(self):
     return self.__unicode__().encode('UTF-8')
+  
+  def __repr__(self):
+    r = 'Identifier({!r}'.format(self.id)
+    if self.type:
+      r += ', type={!r}'.format(self.type)
+    if self.description:
+      r += ', description={!r}'.format(self.description)
+    r += ')'
+    return r
 
 class Publication(object):
   def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, urls=None, identifiers=None):
@@ -109,3 +125,41 @@ class Publication(object):
   
   def __str__(self):
     return self.__unicode__().encode('UTF-8')
+  
+  def __repr__(self):
+    return self.repr()
+  
+  def repr(self, pretty=False):
+    def reprlist(l):
+      if pretty:
+        return '[' + ''.join('\n  ' + repr(x) + ', ' for x in l) + '\n]'
+      else:
+        return repr(l)
+    
+    if pretty:
+      nl = '\n'
+    else:
+      nl = ''
+    
+    r = 'Publication({!r}, {}{}, {}{!r}'.format(self.title, nl, reprlist(self.authors), nl, self.year)
+    
+    if self.published_in:
+      r += ', {}published_in={!r}'.format(nl, self.published_in)
+    if self.pages:
+      r += ', {}pages={!r}'.format(nl, self.pages)
+    if self.volume:
+      r += ', {}volume={!r}'.format(nl, self.volume)
+    if self.series:
+      r += ', {}series={!r}'.format(nl, self.series)
+    if self.issue:
+      r += ', {}issue={!r}'.format(nl, self.issue)
+    if self.special_issue:
+      r += ', {}special_issue={!r}'.format(nl, self.special_issue)
+    if self.supplement:
+      r += ', {}supplement={!r}'.format(nl, self.supplement)
+    if len(self.urls) > 0:
+      r += ', {}urls={}'.format(nl, reprlist(self.urls))
+    if len(self.identifiers) > 0:
+      r += ', {}identifiers={}'.format(nl, reprlist(self.identifiers))
+    r += nl + ')'
+    return r
