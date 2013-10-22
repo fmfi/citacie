@@ -144,26 +144,22 @@ body {
   margin: 0.1ex 0.1ex;
   display: inline-block;
   font-size: 90%;
+  border: 1px solid #999;
+  border-radius: 3px 3px 3px 3px;
 }
 
 .result-fieldname {
   display: inline-block;
   padding: 0.2ex;  
   padding-left: 0.4ex;
-  border: 1px solid #999;
-  border-right: none;
-  border-radius: 3px 0 0 3px;
+  border-radius: 2px 0 0 2px;
 }
 
 .result-value {
-  display: inline-block;
   padding-top: 0.2ex;
   padding-bottom: 0.2ex;
   padding-right: 0.4ex;
   padding-left: 0.4ex;
-  border: 1px solid #999;
-  border-left: none;
-  border-radius: 0 3px 3px 0;  
 }
 
 .result-field-year .result-fieldname {
