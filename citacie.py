@@ -39,6 +39,8 @@ def search_by_author():
     with data_source as conn:
       results.extend(conn.search_by_author(surname, name=name, year=year))
   
+  results.sort(key=lambda r: r.title.lower())
+  
   return render_template('search-by-author.html',
     search_name=name, search_surname=surname, search_year=year,
     results=results)
