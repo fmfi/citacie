@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block title %}Vyhľadávanie podľa autora{% endblock %}
+{% block content %}
+<div class="results-search"><div class="centerbox">
+{% include 'search-by-author-form.html' %}
+</div></div>
+{% if results %}
+  <div class="results">
+  {% macro result_field(name, value, class) %}
+    <span class="result-field result-field-{{ class }}">
+      <span class="result-fieldname">{{ name }}:</span><!--
+      --><span class="result-value">{{ value }}</span>
+    </span>
+  {% endmacro %}
+  {% for result in results %}
+    <div class="result"><div class="centerbox">
+      <div class="result-title">{{ result.title }}</div>
+      
+      {{ result_field('Year', result.year, 'year') }}
+      
+      {% if result.published_in %}
+      {{ result_field('Source', result.published_in, 'source') }}
+      {% endif %}
+      
+      {% if result.series %}
+      {{ result_field('Series', result.series, 'series') }}
+      {% endif %}
+      
+      {% if result.volume %}
+      {{ result_field('Volume', result.volume, 'volume') }}
+      {% endif %}
+      
+      {% if result.pages %}
+      {{ result_field('Pages', result.pages, 'pages') }}
+      {% endif %}
+      
+      {% if result.issue %}
+      {{ result_field('Issue', result.issue, 'issue') }}
+      {% endif %}
+      
+      {% if result.special_issue %}
+      {{ result_field('Special issue', result.special_issue, 'special-issue') }}
+      {% endif %}
+      
+      {% if result.supplement %}
+      {{ result_field('Supplement', result.supplement, 'supplement') }}
+      {% endif %}
+      
+      <div class="result-authors">
+      Authors: 
+      {% for author in result.authors[:10] %}
+        {%- if not loop.first %} &mdash; {% endif -%}
+        <span class="result-author">
+        {{ author.surname }}
+        {%- if author.names %}, {{ author.names|join(' ') }}{% endif -%}
+        </span>
+      {% endfor %}
+      {% if result.authors|count > 10 %}
+        + {{ result.authors|count - 10 }} more
+      {% endif %}
+      </div>
+    </div></div>
+  {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

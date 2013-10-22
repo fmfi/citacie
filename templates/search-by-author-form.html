@@ -1,0 +1,12 @@
+<form action="{{ url_for('search_by_author') }}" method="GET">
+  <label for="by-author-surname">Priezvisko</label>:
+  <input type="text" size="20" id="by-author-surname" name="surname" value="{{ search_surname or '' }}"/>
+  
+  <label for="by-author-name">Meno</label>:
+  <input type="text" size="20" id="by-author-name" name="name" value="{{ search_name or '' }}"/>
+  
+  <label for="by-author-year">Rok</label>:
+  <input type="text" size="5" id="by-author-year" name="year" value="{{ search_year or '' }}"/>
+  
+  <button type="submit">Hľadaj</button>
+</form>
