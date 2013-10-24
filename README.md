@@ -5,7 +5,7 @@
    ```bash
    virtualenv venv
    source venv/bin/activate
-   pip install suds Flask
+   pip install suds Flask defusedxml xmlbuilder
    ```
 
 2. Command-line príklady

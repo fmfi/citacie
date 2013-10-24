@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 from suds.client import Client
-from model import Publication, Author, Identifier
+from model import Publication, Author, Identifier, URL
 import time
+from xmlbuilder import XMLBuilder
+import types
+import urllib2
+from contextlib import closing
+from defusedxml import ElementTree
 
 class WOK:
   def __init__(self):
@@ -10,6 +15,7 @@ class WOK:
     self.auth = None
     self.search = None
     self.session_id = None
+    self.lamr = LAMR()
   
   def open(self):
     self.auth = Client(self.wsdl_auth)
@@ -123,6 +129,23 @@ class WOK:
     
     return records
   
+  def _retrieve_links(self, publications):
+    pubs_by_uids = {}
+    for pub in publications:
+      for id in Identifier.find_by_type(pub.identifiers, 'WOK'):
+        pubs_by_uids[id.value] = pub
+    uids = pubs_by_uids.keys()
+    result_by_uids = self.lamr.retrieve_by_ids(uids)
+    for uid, result in result_by_uids.iteritems():
+      pub = pubs_by_uids[uid]
+      if 'timesCited' in result:
+        # TODO
+        pass
+      if 'sourceURL' in result:
+        pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
+      if 'citingArticlesURL' in result:
+        pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'View citing articles in Web of Science®'))
+  
   def search_by_author(self, surname, name=None, year=None):
     # TODO escaping
     query = u'AU=('
@@ -132,7 +155,9 @@ class WOK:
     query += u')'
     if year is not None:
       query += ' AND PY={}'.format(year)
-    return self._convert_list(self._search(query))
+    publications =  self._convert_list(self._search(query))
+    self._retrieve_links(publications)
+    return publications
     
   def close(self):
     self.auth.service.closeSession()
@@ -144,6 +169,66 @@ class WOK:
   def __exit__(self, type, value, traceback):
     self.close()
     return False
+
+class LAMR:
+  def __init__(self):
+    self.post_url = 'https://ws.isiknowledge.com/cps/xrpc'
+  
+  def _build_retrieve_request(self, fields, uids):
+    x = XMLBuilder('request', xmlns='http://www.isinet.com/xrpc42')
+    with x.fn(name='LinksAMR.retrieve'):
+      with x.list:
+        x.map
+        with x.map:
+          with x.list(name='WOS'):
+            for field in fields:
+              x.val(field)
+        with x.map:
+          for i, uid in enumerate(uids):
+            with x.map(name='cite{}'.format(i)):
+              x.val(uid, name='ut')
+    return str(x)
+  
+  def _parse_retrieve_response(self, response):
+    et = ElementTree.fromstring(response)
+    fn = et.find('{http://www.isinet.com/xrpc42}fn')
+    if fn.get('rc') != 'OK':
+      raise ValueError('Did not receive OK reply for LAMR response')
+    m = fn.find('{http://www.isinet.com/xrpc42}map')
+    results = {}
+    for cite in m:
+      name = cite.get('name')
+      vals = {}
+      wos = cite.find('{http://www.isinet.com/xrpc42}map')
+      for val in wos:
+        vals[val.get('name')] = val.text
+      results[name] = vals
+    return results
+  
+  def _retrieve(self, fields, uids):
+    req_body = self._build_retrieve_request(fields, uids)
+    with closing(urllib2.urlopen(self.post_url, req_body)) as f:
+      response = f.read()
+    parsed_response = self._parse_retrieve_response(response)
+    response_by_uid = {}
+    for i, uid in enumerate(uids):
+      key = 'cite{}'.format(i)
+      if key not in parsed_response:
+        continue
+      response_by_uid[uid] = parsed_response[key]
+    return response_by_uid
+
+  def retrieve_by_ids(self, uids):
+    # split into requests of max 50
+    pagesize = 50
+    pages = len(uids) / pagesize
+    if len(uids) % pagesize > 0:
+      pages += 1
+    results = {}
+    for page in range(pages):
+      sublist = uids[page * pagesize:min((page + 1) * pagesize, len(uids))]
+      results.update(self._retrieve(['timesCited', 'sourceURL', 'citingArticlesURL'], sublist))
+    return results
 
 if __name__ == '__main__':
   import argparse
@@ -169,16 +254,31 @@ if __name__ == '__main__':
     if args.repr:
       print ']'
   
-  def search(args, wok):
-    print_results(args, wok, wok._search(args.query))
+  def search(args):
+    with WOK() as wok:
+      print_results(args, wok, wok._search(args.query))
   
-  def retrieve(args, wok):
-    print_results(args, wok, wok._retrieve_by_id(args.id).records)
+  def retrieve(args):
+    with WOK() as wok:
+      print_results(args, wok, wok._retrieve_by_id(args.id).records)
   
-  def services(args, wok):
-    print wok.auth
-    print '-'*80
-    print wok.search
+  def search_by_author(args):
+    with WOK() as wok:
+      for pub in wok.search_by_author(args.surname, name=args.name, year=args.year):
+        print pub
+  
+  def services(args):
+    with WOK() as wok:
+      print wok.auth
+      print '-'*80
+      print wok.search
+  
+  def lamr_retrieve(args):
+    lamr = LAMR()
+    for uid, vals in lamr.retrieve_by_ids(args.uid).iteritems():
+      print uid
+      for valname, val in vals.iteritems():
+        print '  {}: {}'.format(valname, val)
   
   parser = argparse.ArgumentParser()
   parser.add_argument('--raw', action='store_true', help='show raw results always')
@@ -194,10 +294,19 @@ if __name__ == '__main__':
   parser_retrieve.add_argument('id')
   parser_retrieve.set_defaults(func=retrieve)
   
+  parser_author = subparsers.add_parser('search_by_author')
+  parser_author.add_argument('surname')
+  parser_author.add_argument('--name')
+  parser_author.add_argument('--year')
+  parser_author.set_defaults(func=search_by_author)
+  
   parser_services = subparsers.add_parser('services')
   parser_services.set_defaults(func=services)
   
+  parser_retrieve = subparsers.add_parser('lamr_retrieve')
+  parser_retrieve.add_argument('uid', nargs='+')
+  parser_retrieve.set_defaults(func=lamr_retrieve)
+  
   args = parser.parse_args()
   
-  with WOK() as wok:
-    args.func(args, wok)
+  args.func(args)

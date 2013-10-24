@@ -26,16 +26,16 @@ class Author(object):
     r += ')'
     return r
 
-class Identifier(object):
-  def __init__(self, id, type=None, description=None):
-    """Reprezentuje jednoznacny identifikator
+class TaggedValue(object):
+  def __init__(self, value, type=None, description=None):
+    """Reprezentuje hodnotu s typom
     
-    id = string identifikator
+    value = string identifikator
     type = typ identifikatora (ISBN, ISSN, WOK, ...)
     description = pridany popis identifikatora, napriklad ak je viac roznych ISBN pre hardcover a paperback 
       verzie, da sa to popisat v tejto poznamke
     """
-    self.id = id
+    self.value = value
     self.type = type
     self.description = description
   
@@ -43,7 +43,7 @@ class Identifier(object):
     r = u''
     if self.type:
       r += u'{}:'.format(self.type)
-    r += self.id
+    r += self.value
     if self.description:
       r += u'({})'.format(self.description)
     return r
@@ -52,16 +52,33 @@ class Identifier(object):
     return self.__unicode__().encode('UTF-8')
   
   def __repr__(self):
-    r = 'Identifier({!r}'.format(self.id)
+    r = '{}({!r}'.format(type(self).__name__, self.value)
     if self.type:
       r += ', type={!r}'.format(self.type)
     if self.description:
       r += ', description={!r}'.format(self.description)
     r += ')'
     return r
+  
+  @staticmethod
+  def find_by_type(iterable, type):
+    return filter(lambda x: x.type == type, iterable)
+
+class Identifier(TaggedValue):
+  """Reprezentuje unikatny identifikator
+  
+  value = string identifikator
+  type = typ identifikatora (ISBN, ISSN, WOK, ...)
+  description = pridany popis identifikatora, napriklad ak je viac roznych ISBN pre hardcover a paperback 
+    verzie, da sa to popisat v tejto poznamke
+  """
+  pass
+
+class URL(TaggedValue):
+  pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, urls=None, identifiers=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -70,7 +87,8 @@ class Publication(object):
     pages = strany, na ktorych sa publikacia nachadza vramci published_in
     volume = volume casopisu
     series = nazov serie knih, kam patri published_in
-    urls = adresy na zdrojove datbazy na webe
+    source_urls = adresy na zdrojove datbazy na webe
+    cite_urls = adresy na zoznam citacii na webe
     identifiers = identifikatory tejto publikacie
     """
     self.title = title
@@ -83,22 +101,23 @@ class Publication(object):
     self.issue = issue
     self.special_issue = special_issue
     self.supplement = supplement
-    if urls == None:
-      self.urls = []
-    elif isinstance(urls, types.StringTypes):
-      self.urls = [urls]
+    if source_urls == None:
+      self.source_urls = []
     else:
-      self.urls = list(urls)
+      self.source_urls = list(source_urls)
+    if cite_urls == None:
+      self.cite_urls = []
+    else:
+      self.cite_urls = list(cite_urls)
     if identifiers == None:
       self.identifiers = []
-    elif isinstance(identifiers, Identifier):
-      self.identifiers = [identifiers]
     else:
       self.identifiers = list(identifiers)
   
   def __unicode__(self):
     authors = u', '.join(unicode(x) for x in self.authors)
-    urls = u' '.join(unicode(x) for x in self.urls)
+    source_urls = u' '.join(unicode(x) for x in self.source_urls)
+    cite_urls = u' '.join(unicode(x) for x in self.cite_urls)
     identifiers = u' '.join(unicode(x) for x in self.identifiers)
     
     r = u'{}\n'.format(self.title)
@@ -118,7 +137,8 @@ class Publication(object):
       r += u'  Volume: {}\n'.format(self.volume)
     if self.series:
       r += u'  Series: {}\n'.format(self.series)
-    r += u'  Source URLs: {}\n'.format(urls)
+    r += u'  Source URLs: {}\n'.format(source_urls)
+    r += u'  Citation list URLs: {}\n'.format(cite_urls)
     r += u'  Identifiers: {}\n'.format(identifiers)
     
     return r
@@ -157,8 +177,10 @@ class Publication(object):
       r += ', {}special_issue={!r}'.format(nl, self.special_issue)
     if self.supplement:
       r += ', {}supplement={!r}'.format(nl, self.supplement)
-    if len(self.urls) > 0:
-      r += ', {}urls={}'.format(nl, reprlist(self.urls))
+    if len(self.source_urls) > 0:
+      r += ', {}source_urls={}'.format(nl, reprlist(self.source_urls))
+    if len(self.cite_urls) > 0:
+      r += ', {}cite_urls={}'.format(nl, reprlist(self.cite_urls))
     if len(self.identifiers) > 0:
       r += ', {}identifiers={}'.format(nl, reprlist(self.identifiers))
     r += nl + ')'
