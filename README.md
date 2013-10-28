@@ -8,6 +8,12 @@
    pip install suds Flask defusedxml xmlbuilder
    ```
 
+   Pre testovacie účely sa dá použiť aj fake zdroj dát, ten potrebuje ďaľšie závislosti:
+
+   ```bash
+   pip install names
+   ```
+
 2. Command-line príklady
     
    ```bash
