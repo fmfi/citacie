@@ -25,6 +25,13 @@ class Author(object):
       r += ', names={!r}'.format(self.names)
     r += ')'
     return r
+  
+  def to_dict(self):
+    return {'names': self.names, 'surname': self.surname}
+  
+  @classmethod
+  def from_dict(cls, d):
+    return cls(d['surname'], names=d['names'])
 
 class TaggedValue(object):
   def __init__(self, value, type=None, description=None):
@@ -59,6 +66,13 @@ class TaggedValue(object):
       r += ', description={!r}'.format(self.description)
     r += ')'
     return r
+  
+  def to_dict(self):
+    return {'value': self.value, 'type': self.type, 'description': self.description}
+  
+  @classmethod
+  def from_dict(cls, d):
+    return cls(d['value'], type=d['type'], description=d['description'])
   
   @staticmethod
   def find_by_type(iterable, type):
@@ -194,3 +208,27 @@ class Publication(object):
       r += ', {}errors={}'.format(nl, reprlist(self.errors))
     r += nl + ')'
     return r
+
+  def to_dict(self):
+    def dictify(l):
+      return [x.to_dict() for x in l]
+    return {
+      'title': self.title, 'authors': dictify(self.authors), 'year': self.year,
+      'published_in': self.published_in, 'pages': self.pages, 'volume': self.volume,
+      'series': self.series, 'issue': self.issue, 'special_issue': self.special_issue,
+      'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
+      'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
+      'errors': self.errors
+    }
+  
+  @classmethod
+  def from_dict(cls, d):
+    return Publication(
+      d['title'], [Author.from_dict(x) for x in d['authors']], d['year'],
+      published_in=d['published_in'], pages=d['pages'], volume=d['volume'],
+      series=d['series'], issue=d['issue'], special_issue=d['special_issue'],
+      supplement=d['supplement'], source_urls=[URL.from_dict(x) for x in d['source_urls']],
+      cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
+      identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
+      errors=d['errors']
+    )
