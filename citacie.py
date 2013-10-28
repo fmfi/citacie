@@ -10,10 +10,14 @@ from flask import render_template
 from flask import request
 
 from werkzeug.exceptions import BadRequest
+from itsdangerous import URLSafeSerializer
 
 import wok
+from model import Identifier, Publication
 
 data_sources = [wok.WOK()]
+
+serializer = URLSafeSerializer('TODO READ secret-key FROM config')
 
 @app.route('/')
 def index():
@@ -44,9 +48,18 @@ def search_by_author():
   
   results.sort(key=lambda r: r.title.lower())
   
+  for result in results:
+    result.serialized = serializer.dumps(result.to_dict())
+  
   return render_template('search-by-author.html',
     search_name=name, search_surname=surname, search_year=year,
     results=results)
+
+@app.route('/search-citations', methods=['POST'])
+def search_citations():
+  pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
+  
+  return render_template('search-citations.html', results=pubs)
 
 if __name__ == '__main__':
   import os

@@ -5,6 +5,7 @@
 {% include 'search-by-author-form.html' %}
 </div></div>
 {% if results %}
+  <form method="POST" action="{{ url_for('search_citations') }}" target="_blank">
   <div class="results">
   {% macro result_field(name, value, class) %}
     <span class="result-field result-field-{{ class }}">
@@ -14,7 +15,7 @@
   {% endmacro %}
   {% for result in results %}
     <div class="result"><div class="centerbox">
-      <div class="result-title">{{ result.title }}</div>
+      <div class="result-title"><input type="checkbox" name="publication" value="{{ result.serialized }}" /> {{ result.title }}</div>
       
       {{ result_field('Year', result.year, 'year') }}
       
@@ -82,5 +83,12 @@
     </div></div>
   {% endfor %}
   </div>
+  <div class="results-form-controls bar">
+    <button type="submit">Search citations</button>
+    <button type="reset">Reset selection</button>
+  </div>
+  <div class="results-form-controls">
+  </div>
+  </form>
 {% endif %}
 {% endblock %}

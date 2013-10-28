@@ -122,9 +122,12 @@ body {
 }
 
 .results-search {
-  margin: 1em 0;
+  margin-bottom: 1em;
+  padding-top: 1em;
   padding-bottom: 1em;
   border-bottom: 1px solid #999;
+  background: #eee;
+  color: black;
 }
 
 .result {
@@ -228,6 +231,22 @@ body {
   background: #fee;
   color: black;
   font-size: 90%;
+}
+
+.results-form-controls {
+  border-top: 1px solid #999;
+  text-align: center;
+  padding: 0.5em 0;
+  line-height: 1.5em;
+  height: 1.5em;
+  width: 100%;
+  color: black;
+  background: #eee;
+}
+
+.results-form-controls.bar {
+  position: fixed;
+  bottom: 0;
 }
 
 /* ==========================================================================
