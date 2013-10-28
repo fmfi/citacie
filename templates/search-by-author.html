@@ -48,7 +48,12 @@
       {% endif %}
       
       <div class="result-authors">
-      Authors: 
+      {{ result.authors|count }}
+      {% if result.authors|count == 1 %}
+      author: 
+      {% else %}
+      authors:
+      {% endif %}
       {% for author in result.authors[:10] %}
         {%- if not loop.first %} &mdash; {% endif -%}
         <span class="result-author">
