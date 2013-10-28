@@ -78,7 +78,7 @@ class URL(TaggedValue):
   pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -113,6 +113,10 @@ class Publication(object):
       self.identifiers = []
     else:
       self.identifiers = list(identifiers)
+    if errors == None:
+      self.errors = []
+    else:
+      self.errors = list(errors)
   
   def __unicode__(self):
     authors = u', '.join(unicode(x) for x in self.authors)
@@ -140,6 +144,9 @@ class Publication(object):
     r += u'  Source URLs: {}\n'.format(source_urls)
     r += u'  Citation list URLs: {}\n'.format(cite_urls)
     r += u'  Identifiers: {}\n'.format(identifiers)
+    if len(self.errors) > 0:
+      errors = u' '.join(unicode(x) for x in self.errors)
+      r += u'  Errors: {}\n'.format(errors)
     
     return r
   
@@ -183,5 +190,7 @@ class Publication(object):
       r += ', {}cite_urls={}'.format(nl, reprlist(self.cite_urls))
     if len(self.identifiers) > 0:
       r += ', {}identifiers={}'.format(nl, reprlist(self.identifiers))
+    if len(self.errors) > 0:
+      r += ', {}errors={}'.format(nl, reprlist(self.errors))
     r += nl + ')'
     return r

@@ -222,6 +222,14 @@ body {
   padding: 0;
 }
 
+.result-errors ul {
+  border: 1px solid red;
+  border-radius: 3px 3px 3px 3px;
+  background: #fee;
+  color: black;
+  font-size: 90%;
+}
+
 /* ==========================================================================
    Helper classes
    ========================================================================== */

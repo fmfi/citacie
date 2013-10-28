@@ -145,6 +145,8 @@ class WOK:
         pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
       if 'citingArticlesURL' in result:
         pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'View citing articles in Web of Science®'))
+      if 'message' in result:
+        pub.errors.append(u'Failed loading article URLs: ' + unicode(result['message']))
   
   def search_by_author(self, surname, name=None, year=None):
     # TODO escaping

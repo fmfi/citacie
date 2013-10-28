@@ -69,6 +69,16 @@
         </ul>
       </div>
       {% endif %}
+      
+      {% if result.errors %}
+      <div class="result-errors">
+        <ul>
+        {% for error in result.errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
     </div></div>
   {% endfor %}
   </div>
