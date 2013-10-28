@@ -1,6 +1,6 @@
-### Spustenie
+# Quick start
 
-1. Inštalácia prostredia
+## Inštalácia
 
    ```bash
    virtualenv venv
@@ -14,16 +14,22 @@
    pip install names
    ```
 
-2. Command-line príklady
-    
-   ```bash
-   python wok.py search 'AU=Masarik J*'
-   python wok.py retrieve 'WOS:000308512600015'
-   ```
+## Konfigurácia
 
-3. Spustenie web aplikácie (pre testovacie účely) na localhost:5000
+   1. Skopírujte `local_settings.py.example` do `local_settings.py`
+   2. Upravte nastavenia
+
+## Spustenie
+
+   Aplikácia sa dá spustiť pomocou WSGI, alebo testovací server z príkazového riadku:
 
    ```bash
    CITACIE_DEBUG=1 python citacie.py
    ```
-    
+
+## CLI príkazy na testovanie:
+
+   ```bash
+   python wok.py search 'AU=Masarik J*'
+   python wok.py retrieve 'WOS:000308512600015'
+   ```

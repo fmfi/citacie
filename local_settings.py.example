@@ -1,0 +1,9 @@
+from wok import WOK
+from dummy import Dummy
+
+# zdroje bibliografickych dat
+#data_sources = [WOK()]
+data_sources = [Dummy()]
+
+# tajny sifrovaci kluc
+secret = 'change this!'

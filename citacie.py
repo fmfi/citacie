@@ -12,12 +12,11 @@ from flask import request
 from werkzeug.exceptions import BadRequest
 from itsdangerous import URLSafeSerializer
 
-import wok
 from model import Identifier, Publication
 
-data_sources = [wok.WOK()]
+import local_settings as config
 
-serializer = URLSafeSerializer('TODO READ secret-key FROM config')
+serializer = URLSafeSerializer(config.secret)
 
 @app.route('/')
 def index():
@@ -42,7 +41,7 @@ def search_by_author():
     year = None
   
   results = []
-  for data_source in data_sources:
+  for data_source in config.data_sources:
     with data_source as conn:
       results.extend(conn.search_by_author(surname, name=name, year=year))
   
