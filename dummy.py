@@ -44,6 +44,7 @@ for i in range(publication_count):
   authors = [random_author(name) for name in random.sample(names, author_count)]
   year = random.randint(2000, 2013)
   pub = Publication(title, authors, year)
+  pub.identifiers.append(Identifier(unicode(i), type='DUMMY'))
   publications.append(pub)
 
 class Dummy:
