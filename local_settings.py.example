@@ -1,8 +1,8 @@
-from wok import WOK
+from wok import WOK, LAMR
 from dummy import Dummy
 
 # zdroje bibliografickych dat
-#data_sources = [WOK()]
+#data_sources = [WOK(LAMR())]
 data_sources = [Dummy()]
 
 # tajny sifrovaci kluc

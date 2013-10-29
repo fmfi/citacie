@@ -9,13 +9,13 @@ from contextlib import closing
 from defusedxml import ElementTree
 
 class WOK:
-  def __init__(self):
+  def __init__(self, lamr=None):
     self.wsdl_auth = 'http://search.webofknowledge.com/esti/wokmws/ws/WOKMWSAuthenticate?wsdl'
     self.wsdl_search = 'http://search.webofknowledge.com/esti/wokmws/ws/WokSearchLite?wsdl'
     self.auth = None
     self.search = None
     self.session_id = None
-    self.lamr = LAMR()
+    self.lamr = lamr
   
   def open(self):
     self.auth = Client(self.wsdl_auth)
@@ -130,6 +130,8 @@ class WOK:
     return records
   
   def _retrieve_links(self, publications):
+    if self.lamr is None:
+      return
     pubs_by_uids = {}
     for pub in publications:
       for id in Identifier.find_by_type(pub.identifiers, 'WOK'):
