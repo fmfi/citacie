@@ -173,8 +173,9 @@ class WOK:
     return False
 
 class LAMR:
-  def __init__(self):
+  def __init__(self, delay=1.0):
     self.post_url = 'https://ws.isiknowledge.com/cps/xrpc'
+    self.delay = delay
   
   def _build_retrieve_request(self, fields, uids):
     x = XMLBuilder('request', xmlns='http://www.isinet.com/xrpc42')
@@ -208,6 +209,8 @@ class LAMR:
     return results
   
   def _retrieve(self, fields, uids):
+    if self.delay:
+      time.sleep(self.delay)
     req_body = self._build_retrieve_request(fields, uids)
     with closing(urllib2.urlopen(self.post_url, req_body)) as f:
       response = f.read()
