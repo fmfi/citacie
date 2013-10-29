@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Modul, ktory vracia testovacie data"""
 
+from data_source import DataSource, DataSourceConnection
 from model import *
 import names as name_generator
 import random
@@ -47,8 +48,11 @@ for i in range(publication_count):
   pub.identifiers.append(Identifier(unicode(i), type='DUMMY'))
   publications.append(pub)
 
-class Dummy:
-  def open(self):
+class Dummy(DataSource, DataSourceConnection):
+  def connect(self):
+    return self
+  
+  def close(self):
     pass
   
   def search_by_author(self, surname, name=None, year=None):
@@ -76,15 +80,6 @@ class Dummy:
         return True
       return False
     return [pub for pub in publications if matches(pub)]
-    
-  def close(self):
-    pass
-  
-  def __enter__(self):
-    return self
-  
-  def __exit__(self, type, value, traceback):
-    return False
 
 if __name__ == '__main__':
   print names

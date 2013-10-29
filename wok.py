@@ -7,20 +7,39 @@ import types
 import urllib2
 from contextlib import closing
 from defusedxml import ElementTree
+import mechanize
+from data_source import DataSource, DataSourceConnection
+import html5lib
+import lxml.etree
+import re
 
-class WOK:
+def parse_author(fullname):
+  parts = fullname.split(',', 1)
+  if len(parts) > 1:
+    names = parts[1].split()
+  else:
+    names = None
+  return Author(parts[0], names)
+
+class WokWS(DataSource):
+  def __init__(self, lamr=None):
+    self.lamr = lamr
+  
+  def connect(self):
+    return WokWSConnection(lamr=self.lamr)
+
+class WokWSConnection(DataSourceConnection):
   def __init__(self, lamr=None):
     self.wsdl_auth = 'http://search.webofknowledge.com/esti/wokmws/ws/WOKMWSAuthenticate?wsdl'
     self.wsdl_search = 'http://search.webofknowledge.com/esti/wokmws/ws/WokSearchLite?wsdl'
-    self.auth = None
-    self.search = None
-    self.session_id = None
     self.lamr = lamr
-  
-  def open(self):
+    
     self.auth = Client(self.wsdl_auth)
     self.session_id = self.auth.service.authenticate()
-    self.search = Client(self.wsdl_search, headers={'Cookie': 'SID=' + self.session_id})
+    self.search = Client(self.wsdl_search, headers={'Cookie': 'SID=' + self.session_id})    
+  
+  def close(self):
+    self.auth.service.closeSession()
   
   def _retrieve_by_id(self, uid):
     params = self.search.factory.create('retrieveParameters')
@@ -45,14 +64,6 @@ class WOK:
       if len(l) > 1:
         raise ValueError('Expecting single value only')
       return unicode(l[0])
-    
-    def parse_author(fullname):
-      parts = fullname.split(',', 1)
-      if len(parts) > 1:
-        names = parts[1].split()
-      else:
-        names = None
-      return Author(parts[0], names)
     
     title = u''.join(extract_label(record.title, 'Title'))
     authors = extract_label(record.authors, 'Authors')
@@ -162,17 +173,6 @@ class WOK:
     publications =  self._convert_list(self._search(query))
     self._retrieve_links(publications)
     return publications
-    
-  def close(self):
-    self.auth.service.closeSession()
-  
-  def __enter__(self):
-    self.open()
-    return self
-  
-  def __exit__(self, type, value, traceback):
-    self.close()
-    return False
 
 class LAMR:
   def __init__(self, delay=1.0):
@@ -237,6 +237,125 @@ class LAMR:
       results.update(self._retrieve(['timesCited', 'sourceURL', 'citingArticlesURL'], sublist))
     return results
 
+class WokWeb(DataSource):
+  def __init__(self, additional_headers=None):
+    self.url = 'http://apps.webofknowledge.com/'
+    #self.url = 'http://localhost:8000/'
+    if additional_headers == None:
+      additional_headers = {'User-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0'}
+    self.additional_headers = additional_headers
+    
+  def connect(self):
+    return WokWebConnection(self.url, additional_headers=self.additional_headers)
+  
+class WokWebConnection(DataSourceConnection):
+  def __init__(self, url, additional_headers=None):
+    self.url = url
+    self.additional_headers = additional_headers
+    self.browser = mechanize.Browser()
+    if additional_headers:
+      self.browser.addheaders = list(additional_headers.items())
+  
+  def _delay(self):
+    time.sleep(1)
+  
+  def _strip(self, e):
+    prev =  e.getprevious()
+    par = e.getparent()
+    text = e.text + e.tail
+    if prev is not None:
+      if prev.tail is not None:
+        prev.tail += text
+      else:
+        prev.tail = text
+    else:
+      if par.text is not None:
+        par.text += text
+      else:
+        par.text = text
+    par.remove(e)
+  
+  def _parse_list_for_author(self, response, encoding=None):
+    et = html5lib.parse(response, encoding=encoding, treebuilder="lxml")
+    pubs = []
+    for td in et.findall(".//{http://www.w3.org/1999/xhtml}div[@class='records_chunk']//{http://www.w3.org/1999/xhtml}td[@class='summary_data']"):
+      # remove highlight spans for easier parsing
+      for el in td.findall(".//*[@class='hitHilite']"):
+        self._strip(el)
+      
+      labels = td.findall(".//{http://www.w3.org/1999/xhtml}span[@class='label']")
+      data = {}
+      for label in labels:
+        name = label.text.strip().rstrip(':')
+        if name == 'Title':
+          value = label.getnext().find("./{http://www.w3.org/1999/xhtml}value").text
+          data['href'] = label.getnext().attrib['href']
+        else:
+          sibling = label.getnext()
+          if sibling == None or sibling.attrib.get('class') == 'label':
+            value = label.tail
+          else:
+            value = sibling.text
+            if name == 'Times Cited' and 'href' in sibling.attrib:
+              data['cited_href'] = sibling.attrib['href']
+        value = value.strip()
+        data[name] = value
+      year = re.search(r'(19|20)\d\d', data['Published']).group(0)
+      data['Year'] = year
+      pubs.append(data)
+    return pubs
+      
+  def _list_to_publications(self, l):
+    pubs = []
+    for data in l:
+      print data
+      if 'Author(s)' in data:
+        authors = [parse_author(unicode(x).strip()) for x in data['Author(s)'].split(';') if unicode(x).strip() != u'et al.']
+      else:
+        authors = []
+      
+      pub = Publication(unicode(data['Title']), authors, int(data['Year']))
+      if 'Source' in data:
+        pub.published_in = unicode(data['Source'])
+      if 'Book Series' in data:
+        pub.series = unicode(data['Book Series'])
+      if 'Volume' in data:
+        pub.volume = unicode(data['Volume'])
+      if 'Pages' in data:
+        pub.pages = unicode(data['Pages'])
+      if 'Issue' in data:
+        pub.issue = unicode(data['Issue'])
+      if 'Special Issue' in data:
+        pub.special_issue = unicode(data['Special Issue'])
+      if 'Supplement' in data:
+        pub.supplement = unicode(data['Supplement'])
+      pubs.append(pub)
+    return pubs
+  
+  def search_by_author(self, surname, name=None, year=None):
+    with open('response.txt') as f:
+      response = f.read()
+    l = self._parse_list_for_author(response, encoding='utf-8')
+    return self._list_to_publications(l)
+    self.browser.open(self.url)
+    self.browser.select_form('UA_GeneralSearch_input_form')
+    self.browser['rs_rec_per_page'] = ['50']
+    if year != None:
+      self.browser['value(input1)'] = str(year)
+      self.browser['value(select1)'] = ['PY']
+    fname = surname
+    if name:
+      fname += ' {}*'.format(name)
+    self.browser['value(input2)'] = str(fname)
+    self._delay()
+    r = self.browser.submit()
+    print r.get_data()
+    
+    #self.browser.select_form('UA_GeneralSearch_input_form')
+    
+  def close(self):
+    self.browser.close()
+
 if __name__ == '__main__':
   import argparse
   
@@ -262,20 +381,24 @@ if __name__ == '__main__':
       print ']'
   
   def search(args):
-    with WOK() as wok:
+    with WokWS().connect() as wok:
       print_results(args, wok, wok._search(args.query))
   
   def retrieve(args):
-    with WOK() as wok:
+    with WokWS().connect() as wok:
       print_results(args, wok, wok._retrieve_by_id(args.id).records)
   
   def search_by_author(args):
-    with WOK() as wok:
+    if args.data_source == 'ws':
+      ds = WokWS()
+    else:
+      ds = WokWeb()
+    with ds.connect() as wok:
       for pub in wok.search_by_author(args.surname, name=args.name, year=args.year):
         print pub
   
   def services(args):
-    with WOK() as wok:
+    with WokWS().connect() as wok:
       print wok.auth
       print '-'*80
       print wok.search
@@ -290,6 +413,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--raw', action='store_true', help='show raw results always')
   parser.add_argument('--repr', action='store_true', help='show python code instead of formatted result')
+  parser.add_argument('--data-source', choices=['ws', 'web'], default='ws', help='select data source implementation')
   
   subparsers = parser.add_subparsers()
   

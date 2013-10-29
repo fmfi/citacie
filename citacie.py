@@ -42,7 +42,7 @@ def search_by_author():
   
   results = []
   for data_source in config.data_sources:
-    with data_source as conn:
+    with data_source() as conn:
       results.extend(conn.search_by_author(surname, name=name, year=year))
   
   results.sort(key=lambda r: r.title.lower())
