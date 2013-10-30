@@ -121,6 +121,9 @@ class WokWSConnection(DataSourceConnection):
     retr_params.count = 100
     first_result = self.search.service.search(query_params, retr_params)
     
+    if first_result.recordsFound == 0:
+      return []
+    
     records = []
     pages = first_result.recordsFound / retr_params.count
     if first_result.recordsFound % retr_params.count > 0:
