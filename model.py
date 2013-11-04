@@ -92,7 +92,7 @@ class URL(TaggedValue):
   pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -104,9 +104,11 @@ class Publication(object):
     source_urls = adresy na zdrojove datbazy na webe
     cite_urls = adresy na zoznam citacii na webe
     identifiers = identifikatory tejto publikacie
+    authors_incomplete = zoznam autorov nie je uplny, obsahuje len par z nich
     """
     self.title = title
     self.authors = authors
+    self.authors_incomplete = authors_incomplete
     self.year = year
     self.published_in = published_in
     self.pages = pages
@@ -134,6 +136,8 @@ class Publication(object):
   
   def __unicode__(self):
     authors = u', '.join(unicode(x) for x in self.authors)
+    if self.authors_incomplete:
+      authors += u' et al.'
     source_urls = u' '.join(unicode(x) for x in self.source_urls)
     cite_urls = u' '.join(unicode(x) for x in self.cite_urls)
     identifiers = u' '.join(unicode(x) for x in self.identifiers)
@@ -206,6 +210,8 @@ class Publication(object):
       r += ', {}identifiers={}'.format(nl, reprlist(self.identifiers))
     if len(self.errors) > 0:
       r += ', {}errors={}'.format(nl, reprlist(self.errors))
+    if self.authors_incomplete:
+      r += ', {}authors_incomplete=True'.format(nl)
     r += nl + ')'
     return r
 
@@ -218,7 +224,7 @@ class Publication(object):
       'series': self.series, 'issue': self.issue, 'special_issue': self.special_issue,
       'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
-      'errors': self.errors
+      'errors': self.errors, 'authors_incomplete': self.authors_incomplete
     }
   
   @classmethod
@@ -230,5 +236,5 @@ class Publication(object):
       supplement=d['supplement'], source_urls=[URL.from_dict(x) for x in d['source_urls']],
       cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
-      errors=d['errors']
+      errors=d['errors'], authors_incomplete=d['authors_incomplete']
     )

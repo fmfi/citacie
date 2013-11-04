@@ -312,10 +312,14 @@ class WokWebConnection(DataSourceConnection):
     pubs = []
     for data in l:
       print data
+      authors = []
+      authors_incomplete = False
       if 'Author(s)' in data:
-        authors = [parse_author(unicode(x).strip()) for x in data['Author(s)'].split(';') if unicode(x).strip() != u'et al.']
-      else:
-        authors = []
+        for author_text in (unicode(x) for x in data['Author(s)'].split(';')):
+          if author_text.strip() == u'et al.':
+            authors_incomplete = True
+          else:
+            authors.append(parse_author(author_text.strip()))
       
       pub = Publication(unicode(data['Title']), authors, int(data['Year']))
       if 'Source' in data:
@@ -332,6 +336,7 @@ class WokWebConnection(DataSourceConnection):
         pub.special_issue = unicode(data['Special Issue'])
       if 'Supplement' in data:
         pub.supplement = unicode(data['Supplement'])
+      pub.authors_incomplete = authors_incomplete
       pubs.append(pub)
     return pubs
   

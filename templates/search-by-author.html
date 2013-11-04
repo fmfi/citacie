@@ -48,6 +48,9 @@
       {% endif %}
       
       <div class="result-authors">
+      {% if result.authors_incomplete %}
+      more than
+      {% endif %}
       {{ result.authors|count }}
       {% if result.authors|count == 1 %}
       author: 
