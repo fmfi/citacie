@@ -5,6 +5,7 @@ from data_source import DataSource, DataSourceConnection
 from model import *
 import names as name_generator
 import random
+import time
 
 random.seed(11248384923432943290)
 
@@ -49,6 +50,10 @@ for i in range(publication_count):
   publications.append(pub)
 
 class Dummy(DataSource, DataSourceConnection):
+  def __init__(self, delay=None, batchsize=100):
+    self.delay = delay
+    self.batchsize = batchsize
+  
   def connect(self):
     return self
   
@@ -79,7 +84,15 @@ class Dummy(DataSource, DataSourceConnection):
           continue
         return True
       return False
-    return [pub for pub in publications if matches(pub)]
+    
+    i = self.batchsize
+    for pub in publications:
+      i -= 1
+      if self.delay and i == 0:
+        time.sleep(self.delay)
+        i = self.batchsize
+      if matches(pub):
+        yield pub
 
 if __name__ == '__main__':
   print names
