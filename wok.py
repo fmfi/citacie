@@ -320,6 +320,8 @@ class WokWebConnection(DataSourceConnection):
             authors_incomplete = True
           else:
             authors.append(parse_author(author_text.strip()))
+      else:
+        authors_incomplete = True
       
       pub = Publication(unicode(data['Title']), authors, int(data['Year']))
       if 'Source' in data:

@@ -47,6 +47,7 @@
       {{ result_field('Supplement', result.supplement, 'supplement') }}
       {% endif %}
       
+      {% if result.authors %}
       <div class="result-authors">
       {% if result.authors_incomplete %}
       more than
@@ -68,6 +69,9 @@
         + {{ result.authors|count - 10 }} more
       {% endif %}
       </div>
+      {% else %}
+      <div class="result-authors empty">No list of authors available</div>
+      {% endif %}
       
       {% if result.source_urls or result.cite_urls %}
       <div class="result-urls">
