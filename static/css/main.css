@@ -117,8 +117,12 @@ body {
   padding: 0.25em 0.5em;
 }
 
+.results-search #by-author-name {
+  width: 10em;
+}
+
 .results-search button {
-  display: none;
+  padding: 0.2em 0.4em;
 }
 
 .results-search {
