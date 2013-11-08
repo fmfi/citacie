@@ -7,11 +7,13 @@ import types
 import urllib2
 from contextlib import closing
 from defusedxml import ElementTree
-import mechanize
 from data_source import DataSource, DataSourceConnection
 import html5lib
 import lxml.etree
 import re
+from collections import OrderedDict
+from urllib import urlencode, quote
+import requests
 
 def parse_author(fullname):
   parts = fullname.split(',', 1)
@@ -176,6 +178,9 @@ class WokWSConnection(DataSourceConnection):
     publications =  self._convert_list(self._search(query))
     self._retrieve_links(publications)
     return publications
+  
+  def search_citations(self, publications):
+    raise NotImplemented # sluzba nepodporuje
 
 class LAMR:
   def __init__(self, delay=1.0):
@@ -255,9 +260,9 @@ class WokWebConnection(DataSourceConnection):
   def __init__(self, url, additional_headers=None):
     self.url = url
     self.additional_headers = additional_headers
-    self.browser = mechanize.Browser()
+    self.session = requests.Session()
     if additional_headers:
-      self.browser.addheaders = list(additional_headers.items())
+      self.session.headers.update(additional_headers)
   
   def _delay(self):
     time.sleep(1)
@@ -281,6 +286,7 @@ class WokWebConnection(DataSourceConnection):
   def _parse_list_for_author(self, response, encoding=None):
     et = html5lib.parse(response, encoding=encoding, treebuilder="lxml")
     pubs = []
+    result_count = int(et.find("//*[@id='hitCount.bottom']").text.strip())
     for td in et.findall(".//{http://www.w3.org/1999/xhtml}div[@class='records_chunk']//{http://www.w3.org/1999/xhtml}td[@class='summary_data']"):
       # remove highlight spans for easier parsing
       for el in td.findall(".//*[@class='hitHilite']"):
@@ -306,12 +312,11 @@ class WokWebConnection(DataSourceConnection):
       year = re.search(r'(19|20)\d\d', data['Published']).group(0)
       data['Year'] = year
       pubs.append(data)
-    return pubs
+    return result_count, pubs
       
   def _list_to_publications(self, l):
     pubs = []
     for data in l:
-      print data
       authors = []
       authors_incomplete = False
       if 'Author(s)' in data:
@@ -343,9 +348,10 @@ class WokWebConnection(DataSourceConnection):
     return pubs
   
   def search_by_author(self, surname, name=None, year=None):
+    raise NotImplemented #TODO use requests instead of mechanize
     with open('response.txt') as f:
       response = f.read()
-    l = self._parse_list_for_author(response, encoding='utf-8')
+    count, l = self._parse_list_for_author(response, encoding='utf-8')
     return self._list_to_publications(l)
     self.browser.open(self.url)
     self.browser.select_form('UA_GeneralSearch_input_form')
@@ -362,9 +368,123 @@ class WokWebConnection(DataSourceConnection):
     print r.get_data()
     
     #self.browser.select_form('UA_GeneralSearch_input_form')
+  
+  def _parse_citations_list(self, response, encoding=None):
+    et = html5lib.parse(response, encoding=encoding, treebuilder="lxml")
+    result_count = int(et.find("//*[@id='hitCount.bottom']").text.strip())
+    return result_count
+  
+  def _get_sid(self):
+    return self.session.cookies['SID'].strip('"')
+  
+  def _get_citations_from_url(self, cite_url, origin_ut):
+    r = self.session.get(cite_url)
+    count = self._parse_citations_list(r.text)
+    
+    if count == 0:
+      return []
+    
+    mark_from = '1'
+    mark_to = str(min(count, 100))
+    qid = re.search(r'qid=(\d+)', r.text).group(1)
+    
+    headers = {'Referer': r.url}
+    
+    data = OrderedDict()
+    data['selectedIds'] = ''
+    data['viewType'] = 'summary'
+    data['product'] = 'WOS'
+    data['rurl'] = quote('http://apps.webofknowledge.com/summary.do?SID={sid}&SID={sid}&product=WOS&product=WOS&UT={ut}&qid=6&search_mode=CitingArticles&mode=CitingArticles'.format(sid=quote(self._get_sid(), ''), ut=quote(origin_ut, '')), '')
+    data['mark_id'] = 'WOS'
+    data['colName'] = 'WOS'
+    data['search_mode'] = 'CitingArticles'
+    data['locale'] = 'en_US'
+    data['view_name'] = 'WOS-CitingArticles-summary'
+    data['sortBy'] = 'PY.D;LD.D;SO.A;VL.D;PG.A;AU.A'
+    data['mode'] = 'OpenOutputService'
+    data['qid'] = qid
+    data['SID'] = self._get_sid()
+    data['format'] = 'saveToFile'
+    data['filters'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
+    data['mark_to'] = mark_to
+    data['mark_from'] = mark_from
+    data['count_new_items_marked'] = '0'
+    data['value(record_select_type)'] = 'range'
+    data['markFrom'] = mark_from
+    data['markTo'] = mark_to
+    data['fields_selection'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
+    data['save_options'] = 'tabMacUTF8'
+    
+    self._delay()
+    
+    r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
+    
+    return self._parse_tab_delimited(r2.text)
+  
+  def _parse_tab_delimited(self, text):
+    lines = text.splitlines()
+    columns = lines[0].split('\t')
+    col_authors = columns.index('AF')
+    col_title = columns.index('TI')
+    col_source = columns.index('SO')
+    col_year = columns.index('PY')
+    col_issn = columns.index('SN')
+    col_isbn = columns.index('BN')
+    col_doi = columns.index('DI')
+    col_id = columns.index('UT')
+    col_begin_page = columns.index('BP')
+    col_end_page = columns.index('EP')
+    col_book_series = columns.index('BS')
+    col_volume = columns.index('VL')
+    col_issue = columns.index('IS')
+    col_special_issue = columns.index('SI')
+    col_supplement = columns.index('SU')
+    for line in lines[1:]:
+      data = line.split('\t')
+      pub = Publication(data[col_title], [parse_author(x.strip()) for x in data[col_authors].split(u';')], int(data[col_year]))
+      if data[col_source]:
+        pub.published_in = data[col_source]
+      if data[col_book_series]:
+        pub.series = data[col_book_series]
+      if data[col_volume]:
+        pub.volume = data[col_volume]
+      page_range = []
+      if data[col_begin_page]:
+        page_range.append(data[col_begin_page])
+      if data[col_end_page]:
+        page_range.append(data[col_end_page])
+      if len(page_range) > 0:
+        pub.pages = u'-'.join(page_range)
+      if data[col_issue]:
+        pub.issue = data[col_issue]
+      if data[col_special_issue]:
+        pub.special_issue = data[col_special_issue]
+      if data[col_supplement]:
+        pub.supplement = data[col_supplement]
+      if data[col_id]:
+        pub.identifiers.append(Identifier(data[col_id], type='WOK'))
+      if data[col_issn]:
+        for issn in [x.strip() for x in data[col_issn].split(u';')]:
+          pub.identifiers.append(Identifier(issn, type='ISSN'))
+      if data[col_isbn]:
+        for isbn in [x.strip() for x in data[col_isbn].split(u';')]:
+          pub.identifiers.append(Identifier(isbn, type='ISBN'))
+      if data[col_doi]:
+        pub.identifiers.append(Identifier(data[col_doi], type='DOI'))
+      yield pub
+  
+  def search_citations(self, publications):
+    for publication in publications:
+      ut = list(Identifier.find_by_type(publication.identifiers, 'WOK'))
+      if len(ut) == 0:
+        continue
+      ut = ut[0].value.lstrip(u'WOS:')
+      for cite_url in URL.find_by_type(publication.cite_urls, 'WOK'):
+        for pub in self._get_citations_from_url(cite_url.value, ut):
+          yield pub
     
   def close(self):
-    self.browser.close()
+    self.session.close()
 
 if __name__ == '__main__':
   import argparse

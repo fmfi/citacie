@@ -93,6 +93,9 @@ class Dummy(DataSource, DataSourceConnection):
         i = self.batchsize
       if matches(pub):
         yield pub
+  
+  def search_citations(self, publications):
+    raise NotImplemented # TODO
 
 if __name__ == '__main__':
   print names

@@ -20,10 +20,17 @@ class DataSourceConnection(object):
   
   @abstractmethod
   def search_by_author(self, surname, name=None, year=None):
-    """Vrati iterable vracajuci zoznam publikacii pre dane meno a rok
+    """Vrati iterator vracajuci zoznam publikacii pre dane meno a rok
        - priezvisko hlada presne
        - meno hlada ako prefix (t.j. T najde aj Tomas)
        - ak je rok zadany, vracia len zaznamy pre dany rok, inak pre vsetky roky
+    """
+    raise NotImplemented
+  
+  @abstractmethod
+  def search_citations(self, publications):
+    """Vrati iterator vracajuci zoznam publikacii, ktore cituju publikacie
+       v zozname publications
     """
     raise NotImplemented
   

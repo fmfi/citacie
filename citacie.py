@@ -59,7 +59,12 @@ def search_by_author():
 def search_citations():
   pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
   
-  return render_template('search-citations.html', results=pubs)
+  citing_pubs = []
+  for data_source in config.cite_data_sources:
+    with data_source() as conn:
+      citing_pubs.extend(conn.search_citations(pubs))
+  
+  return render_template('search-citations.html', results=citing_pubs)
 
 if __name__ == '__main__':
   import os

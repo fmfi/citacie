@@ -1,9 +1,12 @@
-from wok import WokWS, LAMR
+from wok import WokWS, LAMR, WokWeb
 from dummy import Dummy
 
 # zdroje bibliografickych dat
 #data_sources = [WokWS(LAMR())]
 data_sources = [Dummy()]
+
+#cite_data_sources = [WokWeb()]
+cite_data_sources = []
 
 # tajny sifrovaci kluc
 secret = 'change this!'
