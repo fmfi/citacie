@@ -69,10 +69,24 @@ def search_citations():
       return None
     return pub.authors[0].surname.lower()
   
+  pubs_authors = set()
+  for pub in pubs:
+    pubs_authors.update(pub.authors)
+  
+  all_authors = set()
+  all_authors.update(pubs_authors)
+  for pub in citing_pubs:
+    all_authors.update(pub.authors)
+  
+  for pub in citing_pubs:
+    pub.autocit = pubs_authors.intersection(pub.authors)
+  
+  citing_pubs = [pub for pub in citing_pubs if not pub.autocit]
+  
   citing_pubs.sort(key=get_first_author_surname)
   citing_pubs.sort(key=lambda r: r.year, reverse=True)
   
-  return render_template('search-citations.html', results=citing_pubs)
+  return render_template('search-citations.html', query_pubs=pubs, results=citing_pubs, authors=sorted(list(all_authors), key=lambda x: x.surname))
 
 if __name__ == '__main__':
   import os

@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
 import types
+import unicodedata
+import string
+
+def is_initial(name):
+  if name.endswith('.'):
+    return True
+  if len(name) == 1:
+    return True
+  return False
+
+def normalize(unicode_string):
+  return ''.join(x for x in unicodedata.normalize('NFKD', unicode_string) if x in string.ascii_letters).lower()
 
 class Author(object):
   def __init__(self, surname, names=None):
@@ -32,6 +44,24 @@ class Author(object):
   @classmethod
   def from_dict(cls, d):
     return cls(d['surname'], names=d['names'])
+  
+  def __eq__(self, other):
+    if not isinstance(other, Author):
+      return NotImplemented
+    if normalize(self.surname) != normalize(other.surname):
+      return False
+    if len(self.names) > 0 and len(other.names) > 0:
+      if is_initial(self.names[0]) or is_initial(other.names[0]):
+        return normalize(self.names[0][0]) == normalize(other.names[0][0])
+      else:
+        return normalize(self.names[0]) == normalize(other.names[0])
+    return True
+  
+  def __hash__(self):
+    """Hash musi zavisiet len na priezvisku, lebo to v niektorych pripadoch staci na to,
+       aby sa dva Author objekty rovnali
+    """
+    return hash(normalize(self.surname))
 
 class TaggedValue(object):
   def __init__(self, value, type=None, description=None):
