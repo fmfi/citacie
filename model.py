@@ -121,8 +121,11 @@ class Identifier(TaggedValue):
 class URL(TaggedValue):
   pass
 
+class Index(TaggedValue):
+  pass
+
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -135,6 +138,7 @@ class Publication(object):
     cite_urls = adresy na zoznam citacii na webe
     identifiers = identifikatory tejto publikacie
     authors_incomplete = zoznam autorov nie je uplny, obsahuje len par z nich
+    indexes = v ktorych citacnych indexoch sa publikacia nachadza
     """
     self.title = title
     self.authors = authors
@@ -159,6 +163,10 @@ class Publication(object):
       self.identifiers = []
     else:
       self.identifiers = list(identifiers)
+    if indexes == None:
+      self.indexes = []
+    else:
+      self.indexes = list(indexes)
     if errors == None:
       self.errors = []
     else:
@@ -171,6 +179,7 @@ class Publication(object):
     source_urls = u' '.join(unicode(x) for x in self.source_urls)
     cite_urls = u' '.join(unicode(x) for x in self.cite_urls)
     identifiers = u' '.join(unicode(x) for x in self.identifiers)
+    indexes = u' '.join(unicode(x) for x in self.indexes)
     
     r = u'{}\n'.format(self.title)
     r += u'  Publication year: {}\n'.format(self.year)
@@ -192,6 +201,7 @@ class Publication(object):
     r += u'  Source URLs: {}\n'.format(source_urls)
     r += u'  Citation list URLs: {}\n'.format(cite_urls)
     r += u'  Identifiers: {}\n'.format(identifiers)
+    r += u'  Indexes: {}\n'.format(indexes)
     if len(self.errors) > 0:
       errors = u' '.join(unicode(x) for x in self.errors)
       r += u'  Errors: {}\n'.format(errors)
@@ -242,6 +252,8 @@ class Publication(object):
       r += ', {}errors={}'.format(nl, reprlist(self.errors))
     if self.authors_incomplete:
       r += ', {}authors_incomplete=True'.format(nl)
+    if len(self.indexes) > 0:
+      r += ', {}indexes={}'.format(nl, reprlist(self.indexes))
     r += nl + ')'
     return r
 
@@ -254,7 +266,8 @@ class Publication(object):
       'series': self.series, 'issue': self.issue, 'special_issue': self.special_issue,
       'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
-      'errors': self.errors, 'authors_incomplete': self.authors_incomplete
+      'errors': self.errors, 'authors_incomplete': self.authors_incomplete,
+      'indexes': self.indexes
     }
   
   @classmethod
@@ -266,5 +279,6 @@ class Publication(object):
       supplement=d['supplement'], source_urls=[URL.from_dict(x) for x in d['source_urls']],
       cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
-      errors=d['errors'], authors_incomplete=d['authors_incomplete']
+      errors=d['errors'], authors_incomplete=d['authors_incomplete'],
+      indexes=d['indexes']
     )

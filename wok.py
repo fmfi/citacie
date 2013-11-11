@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from suds.client import Client
-from model import Publication, Author, Identifier, URL
+from model import Publication, Author, Identifier, URL, Index
 import time
 from xmlbuilder import XMLBuilder
 import types
@@ -120,11 +120,17 @@ class WokWSConnection(DataSourceConnection):
       return None
     return self._convert_to_publication(result.records[0])
   
-  def _search(self, query, database_id='WOS', timespan=None):
+  def _search(self, query, database_id='WOS', timespan=None, edition=None):
     query_params = self.search.factory.create('queryParameters')
     query_params.databaseId = database_id
     query_params.userQuery = query
     query_params.queryLanguage = 'en'
+    
+    if edition:
+      ed = self.search.factory.create('editionDesc')
+      ed.collection = database_id
+      ed.edition = edition
+      query_params.editions = [ed]
     
     if timespan != None:
       ts = self.search.factory.create('timeSpan')
@@ -195,6 +201,30 @@ class WokWSConnection(DataSourceConnection):
   
   def search_citations(self, publications):
     raise NotImplemented # sluzba nepodporuje
+  
+  def _find_edition(self, ut):
+    try_editions = ['SCI', 'SSCI', 'AHCI', 'ISTP', 'ISSHP', 'IC', 'CCR', 'BSCI', 'BHCI']
+    
+    for edition in try_editions:
+      matched = list(self._search(u'UT={}'.format(ut), edition=edition))
+      if len(matched) > 0:
+        return edition
+    
+    return None
+  
+  def assign_indexes(self, publication):
+    e = list(Index.find_by_type(publication.indexes, 'WOS'))
+    if len(e) > 0:
+      return
+    
+    ut = list(Identifier.find_by_type(publication.identifiers, 'WOK'))
+    if len(ut) == 0:
+      return
+    ut = ut[0].value
+    
+    edition = self._find_edition(ut)
+    if edition:
+      publication.indexes.append(Index(edition, type='WOS'))
 
 class LAMR:
   def __init__(self, delay=1.0):
@@ -498,9 +528,14 @@ class WokWebConnection(DataSourceConnection):
       if len(ut) == 0:
         continue
       ut = ut[0].value.lstrip(u'WOS:')
+      ed = list(Index.find_by_type(publication.indexes, 'WOS'))
       for cite_url in URL.find_by_type(publication.cite_urls, 'WOK'):
         for pub in self._get_citations_from_url(cite_url.value, ut):
+          pub.indexes = ed
           yield pub
+  
+  def assign_indexes(self, publication):
+    pass
     
   def close(self):
     self.session.close()

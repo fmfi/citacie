@@ -35,6 +35,12 @@ class DataSourceConnection(object):
     raise NotImplemented
   
   @abstractmethod
+  def assign_indexes(self, publication):
+    """Zisti a nastavi, v akych indexoch sa publikacia nachadza
+    """
+    raise NotImplemented
+  
+  @abstractmethod
   def close(self):
     """Uvolni zdroje pouzivane tymto objektom"""
     raise NotImplemented

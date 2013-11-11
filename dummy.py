@@ -96,6 +96,9 @@ class Dummy(DataSource, DataSourceConnection):
   
   def search_citations(self, publications):
     raise NotImplemented # TODO
+  
+  def assign_indexes(self, publication):
+    pass
 
 if __name__ == '__main__':
   print names
