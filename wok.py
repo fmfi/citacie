@@ -440,7 +440,10 @@ class WokWebConnection(DataSourceConnection):
   def _parse_tab_delimited(self, text):
     lines = text.splitlines()
     columns = lines[0].split('\t')
-    col_authors = columns.index('AF')
+    try:
+      col_authors = columns.index('AF')
+    except ValueError:
+      col_authors = columns.index('AU')
     col_title = columns.index('TI')
     col_source = columns.index('SO')
     col_year = columns.index('PY')
