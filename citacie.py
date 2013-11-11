@@ -64,6 +64,14 @@ def search_citations():
     with data_source() as conn:
       citing_pubs.extend(conn.search_citations(pubs))
   
+  def get_first_author_surname(pub):
+    if len(pub.authors) == 0:
+      return None
+    return pub.authors[0].surname.lower()
+  
+  citing_pubs.sort(key=get_first_author_surname)
+  citing_pubs.sort(key=lambda r: r.year, reverse=True)
+  
   return render_template('search-citations.html', results=citing_pubs)
 
 if __name__ == '__main__':
