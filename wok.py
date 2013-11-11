@@ -11,7 +11,7 @@ from data_source import DataSource, DataSourceConnection
 import html5lib
 import lxml.etree
 import re
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from urllib import urlencode, quote
 import requests
 
@@ -22,6 +22,20 @@ def parse_author(fullname):
   else:
     names = None
   return Author(parts[0], names)
+
+Page = namedtuple('Page', ('page', 'start_index', 'end_index', 'count'))
+
+def pages(item_count, page_size, start_page=1, start_index=1, end_inclusive=False):
+  page_count = item_count / page_size
+  if item_count % page_size > 0:
+      page_count += 1
+  for page_index in range(page_count):
+    page_start_index = start_index + page_index * page_size
+    page_end_index = min(page_start_index + page_size, start_index + item_count)
+    page_item_count = page_end_index - page_start_index
+    if end_inclusive:
+      page_end_index -= 1
+    yield Page(start_page + page_index, page_start_index, page_end_index, page_item_count)
 
 class WokWS(DataSource):
   def __init__(self, lamr=None):
@@ -382,44 +396,46 @@ class WokWebConnection(DataSourceConnection):
     count = self._parse_citations_list(r.text)
     
     if count == 0:
-      return []
+      return
     
-    mark_from = '1'
-    mark_to = str(min(count, 100))
-    qid = re.search(r'qid=(\d+)', r.text).group(1)
-    
-    headers = {'Referer': r.url}
-    
-    data = OrderedDict()
-    data['selectedIds'] = ''
-    data['viewType'] = 'summary'
-    data['product'] = 'WOS'
-    data['rurl'] = quote('http://apps.webofknowledge.com/summary.do?SID={sid}&SID={sid}&product=WOS&product=WOS&UT={ut}&qid=6&search_mode=CitingArticles&mode=CitingArticles'.format(sid=quote(self._get_sid(), ''), ut=quote(origin_ut, '')), '')
-    data['mark_id'] = 'WOS'
-    data['colName'] = 'WOS'
-    data['search_mode'] = 'CitingArticles'
-    data['locale'] = 'en_US'
-    data['view_name'] = 'WOS-CitingArticles-summary'
-    data['sortBy'] = 'PY.D;LD.D;SO.A;VL.D;PG.A;AU.A'
-    data['mode'] = 'OpenOutputService'
-    data['qid'] = qid
-    data['SID'] = self._get_sid()
-    data['format'] = 'saveToFile'
-    data['filters'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
-    data['mark_to'] = mark_to
-    data['mark_from'] = mark_from
-    data['count_new_items_marked'] = '0'
-    data['value(record_select_type)'] = 'range'
-    data['markFrom'] = mark_from
-    data['markTo'] = mark_to
-    data['fields_selection'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
-    data['save_options'] = 'tabMacUTF8'
-    
-    self._delay()
-    
-    r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
-    
-    return self._parse_tab_delimited(r2.text)
+    for page in pages(count, 500, end_inclusive=True):
+      mark_from = str(page.start_index)
+      mark_to = str(page.end_index)
+      qid = re.search(r'qid=(\d+)', r.text).group(1)
+      
+      headers = {'Referer': r.url}
+      
+      data = OrderedDict()
+      data['selectedIds'] = ''
+      data['viewType'] = 'summary'
+      data['product'] = 'WOS'
+      data['rurl'] = quote('http://apps.webofknowledge.com/summary.do?SID={sid}&SID={sid}&product=WOS&product=WOS&UT={ut}&qid=6&search_mode=CitingArticles&mode=CitingArticles'.format(sid=quote(self._get_sid(), ''), ut=quote(origin_ut, '')), '')
+      data['mark_id'] = 'WOS'
+      data['colName'] = 'WOS'
+      data['search_mode'] = 'CitingArticles'
+      data['locale'] = 'en_US'
+      data['view_name'] = 'WOS-CitingArticles-summary'
+      data['sortBy'] = 'PY.D;LD.D;SO.A;VL.D;PG.A;AU.A'
+      data['mode'] = 'OpenOutputService'
+      data['qid'] = qid
+      data['SID'] = self._get_sid()
+      data['format'] = 'saveToFile'
+      data['filters'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
+      data['mark_to'] = mark_to
+      data['mark_from'] = mark_from
+      data['count_new_items_marked'] = '0'
+      data['value(record_select_type)'] = 'range'
+      data['markFrom'] = mark_from
+      data['markTo'] = mark_to
+      data['fields_selection'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
+      data['save_options'] = 'tabMacUTF8'
+      
+      self._delay()
+      
+      r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
+      
+      for pub in self._parse_tab_delimited(r2.text):
+        yield pub
   
   def _parse_tab_delimited(self, text):
     lines = text.splitlines()
