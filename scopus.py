@@ -33,6 +33,8 @@ class ScopusWebConnection(DataSourceConnection):
     form_url = 'http://www.scopus.com/search/form.url?display=authorLookup'
     post_url = 'http://www.scopus.com/search/submit/authorlookup.url'
     post2_url = 'http://www.scopus.com/results/authorLookup.url'
+    post3_url = 'http://www.scopus.com/results/handle.url'
+    get4_url = 'http://www.scopus.com/citation/export.url'
     
     r_form = self.session.get(form_url)
     
@@ -64,8 +66,9 @@ class ScopusWebConnection(DataSourceConnection):
     authors_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='AuthorLookupResultsForm']")
     
     form2 = HTMLForm(authors_form)
-    for cb in ['allField', 'authorIds', 'pageField', 'allField2', 'pageField2']:
+    for cb in ['allField', 'pageField', 'allField2', 'pageField2']:
       form2[cb].checked = True
+    form2.check_all('authorIds')
     form2.set_value('selectDeselectAllAttempt', 'clicked')
     form2.set_value('clickedLink', 'ShowDocumentsButton')
     
@@ -74,7 +77,32 @@ class ScopusWebConnection(DataSourceConnection):
     self._delay()
     r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
-    print r_results2.text.encode('UTF-8')
+    et = html5lib.parse(r_results2.text, treebuilder="lxml")
+    results_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='SearchResultsForm']")
+    form3 = HTMLForm(results_form)
+    
+    form3.check_all('selectedEIDs')
+    form3.set_value('selectDeselectAllAttempt', 'clicked')
+    form3.set_value('clickedLink', 'Export')
+    form3.check_all('selectAllCheckBox')
+    form3.check_all('selectPageCheckBox')
+    
+    self._delay()
+    headers = {'Referer': r_results2.url}
+    r_results3 = self.session.post(post3_url, data=form3.to_params(), headers=headers)
+    
+    et = html5lib.parse(r_results3.text, treebuilder="lxml")
+    export_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='exportForm']")
+    form4 = HTMLForm(export_form)
+    
+    form4.set_value('exportFormat', 'CSV')
+    form4.set_value('view', 'FullDocument')
+    
+    self._delay()
+    headers = {'Referer': r_results3.url}
+    r_results4 = self.session.get(get4_url, params=form4.to_params(), headers=headers)
+    
+    print r_results4.text.encode('UTF-8')
     
     return []
   
