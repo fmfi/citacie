@@ -287,7 +287,7 @@ class Publication(object):
       'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
       'errors': self.errors, 'authors_incomplete': self.authors_incomplete,
-      'indexes': self.indexes
+      'indexes': dictify(self.indexes)
     }
   
   @classmethod
