@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from data_source import DataSource, DataSourceConnection
 from model import Publication, Author, Identifier, URL, Index
-import htmlform
+from htmlform import HTMLForm
 
 from collections import OrderedDict
 from urllib import urlencode, quote
@@ -63,25 +63,16 @@ class ScopusWebConnection(DataSourceConnection):
     et = html5lib.parse(r_results.text, treebuilder="lxml")
     authors_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='AuthorLookupResultsForm']")
     
-    data2 = htmlform.find_attributes(authors_form, include_cb=['allField', 'authorIds', 'pageField', 'allField2', 'pageField2'])
-    #data2.append(['showDocumentsButton.x', '0'])
-    #data2.append(['showDocumentsButton.y', '0'])
-    
-    def set_data(name, value):
-      for param in data2:
-        if param[0] == name:
-          param[1] = value
-          return
-      data2.append([name, value])
-      
-    set_data('selectDeselectAllAttempt', 'clicked')
-    set_data('clickedLink', 'ShowDocumentsButton')
-    
+    form2 = HTMLForm(authors_form)
+    for cb in ['allField', 'authorIds', 'pageField', 'allField2', 'pageField2']:
+      form2[cb].checked = True
+    form2.set_value('selectDeselectAllAttempt', 'clicked')
+    form2.set_value('clickedLink', 'ShowDocumentsButton')
     
     headers = {'Referer': r_results.url}
     
     self._delay()
-    r_results2 = self.session.post(post2_url, data=data2, headers=headers)
+    r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
     print r_results2.text.encode('UTF-8')
     
