@@ -2,6 +2,8 @@
 import types
 import unicodedata
 import string
+import re
+from itertools import izip_longest
 
 def is_initial(name):
   if name.endswith('.'):
@@ -65,16 +67,21 @@ class Author(object):
   
   @classmethod
   def parse_sn_first(cls, fullname):
-    parts = fullname.split(',', 1)
+    parts = re.split(r'[, ]+', fullname, maxsplit=1)
     if len(parts) > 1:
-      names = parts[1].split()
+      parts2 = re.split(r'([. ]+)', parts[1])
+      names = []
+      for name, separator in izip_longest(parts2[::2], parts2[1::2], fillvalue=''):
+        if len(name) == 0:
+          continue
+        names.append(name + separator.strip())
     else:
       names = None
     return cls(parts[0], names)
   
   @classmethod
-  def parse_sn_first_list(cls, names):
-    return [cls.parse_sn_first(x.strip()) for x in names.split(u';')]
+  def parse_sn_first_list(cls, names, separator=u';'):
+    return [cls.parse_sn_first(x.strip()) for x in names.split(separator)]
 
 class TaggedValue(object):
   def __init__(self, value, type=None, description=None):

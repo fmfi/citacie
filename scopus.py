@@ -126,7 +126,7 @@ class ScopusWebConnection(DataSourceConnection):
       return r
     
     for line in csv:
-      authors = Author.parse_sn_first_list(line['Authors'])
+      authors = Author.parse_sn_first_list(line['Authors'], separator=u',')
       pub = Publication(line['Title'], authors, int(line['Year']))
       pub.published_in = empty_to_none(line['Source title'])
       pub.volume = empty_to_none(line['Volume'])
