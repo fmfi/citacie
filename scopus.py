@@ -11,6 +11,7 @@ from requests.utils import add_dict_to_cookiejar
 import time
 import html5lib
 import unicodecsv
+from urlparse import urlparse, parse_qs
 
 class ScopusWeb(DataSource):
   def __init__(self, additional_headers=None):
@@ -132,7 +133,14 @@ class ScopusWebConnection(DataSourceConnection):
       pub.volume = empty_to_none(line['Volume'])
       pub.issue = empty_to_none(line['Issue'])
       pub.pages = make_page_range(empty_to_none(line['Page start']), empty_to_none(line['Page end']))
-      pub.source_urls.append(URL(line['Link'], type='SCOPUS', description='View publication in SCOPUS'))
+      url = empty_to_none(line['Link'])
+      
+      if url:
+        pub.source_urls.append(URL(url, type='SCOPUS', description='View publication in SCOPUS'))
+        url_parts = urlparse(url)
+        url_query = parse_qs(url_parts.query)
+        if 'eid' in url_query and len:
+          pub.identifiers.append(Identifier(url_query['eid'][0], type='SCOPUS'))
       
       for issn in list_remove_empty(line['ISSN'].split(u';')):
         pub.identifiers.append(Identifier(issn, type='ISSN'))
@@ -143,6 +151,8 @@ class ScopusWebConnection(DataSourceConnection):
       doi = empty_to_none(line['DOI'])
       if doi:
         pub.identifiers.append(Identifier(doi, type='DOI'))
+      
+      pub.indexes.append(Index('SCOPUS', type='SCOPUS'))
       
       yield pub
   
