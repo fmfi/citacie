@@ -6,7 +6,7 @@
    sudo apt-get install python-dev libxml2-dev libxslt-dev zlib1g-dev
    virtualenv venv
    source venv/bin/activate
-   pip install suds Flask defusedxml xmlbuilder html5lib lxml requests
+   pip install suds Flask defusedxml xmlbuilder html5lib lxml requests unicodecsv
    ```
 
    Pre testovacie účely sa dá použiť aj fake zdroj dát, ten potrebuje ďaľšie závislosti:

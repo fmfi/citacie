@@ -2,6 +2,7 @@
 from data_source import DataSource, DataSourceConnection
 from model import Publication, Author, Identifier, URL, Index
 from htmlform import HTMLForm
+from util import strip_bom, make_page_range
 
 from collections import OrderedDict
 from urllib import urlencode, quote
@@ -9,6 +10,7 @@ import requests
 from requests.utils import add_dict_to_cookiejar
 import time
 import html5lib
+import unicodecsv
 
 class ScopusWeb(DataSource):
   def __init__(self, additional_headers=None):
@@ -102,9 +104,50 @@ class ScopusWebConnection(DataSourceConnection):
     headers = {'Referer': r_results3.url}
     r_results4 = self.session.get(get4_url, params=form4.to_params(), headers=headers)
     
-    print r_results4.text.encode('UTF-8')
+    return self._parse_csv(r_results4.content, encoding=r_results4.encoding)
+  
+  def _parse_csv(self, content, encoding='UTF-8'):
+    csv = unicodecsv.DictReader(strip_bom(content).splitlines(), encoding=encoding)
     
-    return []
+    def empty_to_none(s):
+      if s == None:
+        return None
+      s = s.strip()
+      if len(s) == 0:
+        return None
+      return s
+    
+    def list_remove_empty(l):
+      r = []
+      for x in l:
+        v = empty_to_none(x)
+        if v:
+          r.append(v)
+      return r
+    
+    for line in csv:
+      authors = Author.parse_sn_first_list(line['Authors'])
+      pub = Publication(line['Title'], authors, int(line['Year']))
+      pub.published_in = empty_to_none(line['Source title'])
+      pub.volume = empty_to_none(line['Volume'])
+      pub.issue = empty_to_none(line['Issue'])
+      pub.pages = make_page_range(empty_to_none(line['Page start']), empty_to_none(line['Page end']))
+      pub.source_urls.append(URL(line['Link'], type='SCOPUS', description='View publication in SCOPUS'))
+      
+      for issn in list_remove_empty(line['ISSN'].split(u';')):
+        pub.identifiers.append(Identifier(issn, type='ISSN'))
+      
+      for isbn in list_remove_empty(line['ISBN'].split(u';')):
+        pub.identifiers.append(Identifier(isbn, type='ISBN'))
+      
+      doi = empty_to_none(line['DOI'])
+      if doi:
+        pub.identifiers.append(Identifier(doi, type='DOI'))
+      
+      if line['Document Type'] == 'Scopus':
+        raise ValueError('AAA')
+      
+      yield pub
   
   def search_citations(self, publications):
     
@@ -118,5 +161,7 @@ class ScopusWebConnection(DataSourceConnection):
 
 if __name__ == '__main__':
   with ScopusWeb().connect() as conn:
-    for pub in conn.search_by_author('Vinar', name='T'):
-      print pub
+    #for pub in conn.search_by_author('Vinar', name='T'):
+    with open('sc-csv.csv', 'r') as f:
+      for pub in conn._parse_csv(f.read()):
+        print pub

@@ -62,6 +62,19 @@ class Author(object):
        aby sa dva Author objekty rovnali
     """
     return hash(normalize(self.surname))
+  
+  @classmethod
+  def parse_sn_first(cls, fullname):
+    parts = fullname.split(',', 1)
+    if len(parts) > 1:
+      names = parts[1].split()
+    else:
+      names = None
+    return cls(parts[0], names)
+  
+  @classmethod
+  def parse_sn_first_list(cls, names):
+    return [cls.parse_sn_first(x.strip()) for x in names.split(u';')]
 
 class TaggedValue(object):
   def __init__(self, value, type=None, description=None):

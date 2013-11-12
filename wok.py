@@ -15,14 +15,6 @@ from collections import OrderedDict, namedtuple
 from urllib import urlencode, quote
 import requests
 
-def parse_author(fullname):
-  parts = fullname.split(',', 1)
-  if len(parts) > 1:
-    names = parts[1].split()
-  else:
-    names = None
-  return Author(parts[0], names)
-
 Page = namedtuple('Page', ('page', 'start_index', 'end_index', 'count'))
 
 def pages(item_count, page_size, start_page=1, start_index=1, end_inclusive=False):
@@ -83,7 +75,7 @@ class WokWSConnection(DataSourceConnection):
     
     title = u''.join(extract_label(record.title, 'Title'))
     authors = extract_label(record.authors, 'Authors')
-    parsed_authors = [parse_author(unicode(x)) for x in authors]
+    parsed_authors = [Author.parse_sn_first(unicode(x)) for x in authors]
     year = extract_single(record.source, 'Published.BiblioYear')
     p = Publication(title, parsed_authors, year)
     
@@ -368,7 +360,7 @@ class WokWebConnection(DataSourceConnection):
           if author_text.strip() == u'et al.':
             authors_incomplete = True
           else:
-            authors.append(parse_author(author_text.strip()))
+            authors.append(Author.parse_sn_first(author_text.strip()))
       else:
         authors_incomplete = True
       
@@ -490,20 +482,14 @@ class WokWebConnection(DataSourceConnection):
     col_supplement = columns.index('SU')
     for line in lines[1:]:
       data = line.split('\t')
-      pub = Publication(data[col_title], [parse_author(x.strip()) for x in data[col_authors].split(u';')], int(data[col_year]))
+      pub = Publication(data[col_title], Author.parse_sn_first_list(data[col_authors]), int(data[col_year]))
       if data[col_source]:
         pub.published_in = data[col_source]
       if data[col_book_series]:
         pub.series = data[col_book_series]
       if data[col_volume]:
         pub.volume = data[col_volume]
-      page_range = []
-      if data[col_begin_page]:
-        page_range.append(data[col_begin_page])
-      if data[col_end_page]:
-        page_range.append(data[col_end_page])
-      if len(page_range) > 0:
-        pub.pages = u'-'.join(page_range)
+      pub.pages = make_page_range(data[col_begin_page], data[col_end_page])
       if data[col_issue]:
         pub.issue = data[col_issue]
       if data[col_special_issue]:
