@@ -6,6 +6,7 @@ import htmlform
 from collections import OrderedDict
 from urllib import urlencode, quote
 import requests
+from requests.utils import add_dict_to_cookiejar
 import time
 import html5lib
 
@@ -54,6 +55,7 @@ class ScopusWebConnection(DataSourceConnection):
     ]
     
     headers = {'Referer': r_form.url}
+    add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
     
     self._delay()
     r_results = self.session.post(post_url, data=data, headers=headers)
@@ -61,11 +63,22 @@ class ScopusWebConnection(DataSourceConnection):
     et = html5lib.parse(r_results.text, treebuilder="lxml")
     authors_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='AuthorLookupResultsForm']")
     
-    data2 = htmlform.find_attributes(authors_form, include_cb=['allField', 'authorIds'])
-    data2.append(('showDocumentsButton.x', '0'))
-    data2.append(('showDocumentsButton.y', '0'))
+    data2 = htmlform.find_attributes(authors_form, include_cb=['allField', 'authorIds', 'pageField', 'allField2', 'pageField2'])
+    #data2.append(['showDocumentsButton.x', '0'])
+    #data2.append(['showDocumentsButton.y', '0'])
     
-    headers = {'Referer': r_form.url}
+    def set_data(name, value):
+      for param in data2:
+        if param[0] == name:
+          param[1] = value
+          return
+      data2.append([name, value])
+      
+    set_data('selectDeselectAllAttempt', 'clicked')
+    set_data('clickedLink', 'ShowDocumentsButton')
+    
+    
+    headers = {'Referer': r_results.url}
     
     self._delay()
     r_results2 = self.session.post(post2_url, data=data2, headers=headers)

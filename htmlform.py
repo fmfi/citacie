@@ -2,6 +2,8 @@
 
 def find_attributes(form_et, include_cb=None):
   attribs = []
+  def append(name, value):
+    attribs.append([name, value])
   for elem in form_et.findall(".//*"):
     if 'name' not in elem.attrib:
       continue
@@ -16,11 +18,11 @@ def find_attributes(form_et, include_cb=None):
         value = elem.attrib['value']
       if typ == 'checkbox':
         if 'checked' in elem.attrib:
-          attribs.append((name, value))
+          append(name, value)
         elif include_cb and name in include_cb:
-          attribs.append((name, value))
+          append(name, value)
       elif typ in ('text', 'password', 'checkbox', 'textarea', 'hidden'):
-        attribs.append((name, value))
+        append(name, value)
     elif elem.tag == '{http://www.w3.org/1999/xhtml}select':
       value = None
       for option in elem.findall('.//{http://www.w3.org/1999/xhtml}option'):
@@ -31,5 +33,5 @@ def find_attributes(form_et, include_cb=None):
           elif 'selected' in option.attrib:
             value = optval
       if value != None:
-        attribs.append((name, value))
+        append(name, value)
   return attribs
