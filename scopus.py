@@ -144,9 +144,6 @@ class ScopusWebConnection(DataSourceConnection):
       if doi:
         pub.identifiers.append(Identifier(doi, type='DOI'))
       
-      if line['Document Type'] == 'Scopus':
-        raise ValueError('AAA')
-      
       yield pub
   
   def search_citations(self, publications):
