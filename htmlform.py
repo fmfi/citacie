@@ -27,7 +27,7 @@ class HTMLForm(object):
     def append(name, value):
       self.inputs.append(HTMLInput(name, value))
     
-    for elem in form_et.findall(".//*"):
+    for elem in form_et.getiterator():
       if 'name' not in elem.attrib:
         continue
       name = elem.attrib['name']
