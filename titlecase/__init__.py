@@ -12,7 +12,7 @@ import re
 __all__ = ['titlecase']
 __version__ = '0.5.2'
 
-SMALL = 'a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?'
+SMALL = 'a|aboard|about|above|across|after|against|along|although|amid|among|an|and|anti|around|as|at|because|before|behind|below|beneath|beside|besides|between|beyond|but|by|concerning|considering|despite|down|during|en|except|excepting|excluding|following|for|from|how|if|in|inside|into|like|minus|near|nor|of|off|on|once|onto|opposite|or|outside|over|past|per|plus|regarding|round|save|since|so|than|that|the|though|through|till|to|toward|towards|under|underneath|unlike|until|up|upon|v\.?|versus|via|vs\.?|when|where|whether|while|with|within|without|yet'
 PUNCT = r"""!"#$%&'‘()*+,\-./:;?@[\\\]_`{|}~"""
 
 SMALL_WORDS = re.compile(r'^(%s)$' % SMALL, re.I)
