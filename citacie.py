@@ -51,7 +51,7 @@ def search_by_author():
       results.extend(conn.search_by_author(surname, name=name, year=year))
   
   results.sort(key=lambda r: r.title.lower())
-  results.sort(key=lambda r: r.year, reverse=True)
+  results.sort(key=lambda r: r.year)
   
   for result in results:
     result.serialized = serializer.dumps(result.to_dict())
