@@ -23,7 +23,7 @@
         {{ author.short_name }}
       {% endfor %}
       </span>
-      <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>
+      <span class="marc-tag">\n</span> <span class="marc-value" title="{{ result.title }}">{{ result.title|titlecase }}</span>
       <span class="marc-tag">\p</span> <span class="marc-value">
       {{ result.published_in }}
       {%- if result.volume -%}

@@ -6,7 +6,8 @@
    sudo apt-get install python-dev libxml2-dev libxslt-dev zlib1g-dev
    virtualenv venv
    source venv/bin/activate
-   pip install suds Flask defusedxml xmlbuilder html5lib lxml requests unicodecsv
+   pip install ez_setup # kvoli titlecase
+   pip install suds Flask defusedxml xmlbuilder html5lib lxml requests unicodecsv titlecase
    ```
 
    Pre testovacie účely sa dá použiť aj fake zdroj dát, ten potrebuje ďaľšie závislosti:

@@ -18,6 +18,10 @@ import local_settings as config
 
 serializer = URLSafeSerializer(config.secret)
 
+import titlecase
+app.jinja_env.filters['titlecase'] = titlecase.titlecase
+
+
 @app.route('/')
 def index():
   return render_template('index.html')
