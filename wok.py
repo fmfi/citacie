@@ -14,6 +14,7 @@ import re
 from collections import OrderedDict, namedtuple
 from urllib import urlencode, quote
 import requests
+from util import make_page_range
 
 Page = namedtuple('Page', ('page', 'start_index', 'end_index', 'count'))
 
