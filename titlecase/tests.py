@@ -142,6 +142,10 @@ TEST_DATA = (
     ( 
         "this is http://foo.com",
         "This Is http://foo.com"
+    ),
+    (
+        "THIS IS A 5-WORD TITLE",
+        "This Is a 5-Word Title"
     )
 )
 
@@ -149,6 +153,11 @@ def test_all_caps_regex():
     """Test - all capitals regex"""
     from titlecase import ALL_CAPS
     assert bool(ALL_CAPS.match('THIS IS ALL CAPS')) is True
+
+def test_all_caps_regex_2():
+    """Test - all capitals regex with numer"""
+    from titlecase import ALL_CAPS
+    assert bool(ALL_CAPS.match('THIS IS ALL CAPS JOHHNY7')) is True
 
 def test_initials_regex():
     """Test - uppercase initals regex with A.B"""
