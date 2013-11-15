@@ -17,7 +17,7 @@ TEST_DATA = (
     ),
     ( 
         "dance with me/let’s face the music and dance",
-        "Dance With Me/Let’s Face the Music and Dance"
+        "Dance with Me/Let’s Face the Music and Dance"
     ),
     (
         "34th 3rd 2nd",
@@ -25,7 +25,7 @@ TEST_DATA = (
     ),
     (
         "Q&A with steve jobs: 'that's what happens in technology'",
-        "Q&A With Steve Jobs: 'That's What Happens in Technology'"
+        "Q&A with Steve Jobs: 'That's What Happens in Technology'"
     ),
     (
         "What is AT&T's problem?",
@@ -33,7 +33,7 @@ TEST_DATA = (
     ),
     (
         "Apple deal with AT&T falls through",
-        "Apple Deal With AT&T Falls Through"
+        "Apple Deal with AT&T Falls Through"
     ),
     (
         "this v that",
@@ -57,7 +57,7 @@ TEST_DATA = (
     ),
     (
         "'by the Way, small word at the start but within quotes.'",
-        "'By the Way, Small Word at the Start but Within Quotes.'"
+        "'By the Way, Small Word at the Start but within Quotes.'"
     ),
     (
         "Small word at end is nothing to be afraid of",
@@ -65,15 +65,15 @@ TEST_DATA = (
     ),
     (
         "Starting Sub-Phrase With a Small Word: a Trick, Perhaps?",
-        "Starting Sub-Phrase With a Small Word: A Trick, Perhaps?"
+        "Starting Sub-Phrase with a Small Word: A Trick, Perhaps?"
     ),
     (    
         "Sub-Phrase With a Small Word in Quotes: 'a Trick, Perhaps?'",
-        "Sub-Phrase With a Small Word in Quotes: 'A Trick, Perhaps?'"
+        "Sub-Phrase with a Small Word in Quotes: 'A Trick, Perhaps?'"
     ),
     (
         'sub-phrase with a small word in quotes: "a trick, perhaps?"',
-        'Sub-Phrase With a Small Word in Quotes: "A Trick, Perhaps?"'
+        'Sub-Phrase with a Small Word in Quotes: "A Trick, Perhaps?"'
     ),
     (
         '"Nothing to Be Afraid of?"',
@@ -105,7 +105,7 @@ TEST_DATA = (
     ),
     (
         'reading between the lines of steve jobs’s ‘thoughts on music’',
-        'Reading Between the Lines of Steve Jobs’s ‘Thoughts on Music’'
+        'Reading between the Lines of Steve Jobs’s ‘Thoughts on Music’'
     ),
     (
         'seriously, ‘repair permissions’ is voodoo',
@@ -146,6 +146,10 @@ TEST_DATA = (
     (
         "THIS IS A 5-WORD TITLE",
         "This Is a 5-Word Title"
+    ),
+    (
+        "proceedings of the ieee",
+        "Proceedings of the IEEE"
     )
 )
 

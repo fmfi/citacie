@@ -13,9 +13,11 @@ __all__ = ['titlecase']
 __version__ = '0.5.2'
 
 SMALL = 'a|aboard|about|above|across|after|against|along|although|amid|among|an|and|anti|around|as|at|because|before|behind|below|beneath|beside|besides|between|beyond|but|by|concerning|considering|despite|down|during|en|except|excepting|excluding|following|for|from|how|if|in|inside|into|like|minus|near|nor|of|off|on|once|onto|opposite|or|outside|over|past|per|plus|regarding|round|save|since|so|than|that|the|though|through|till|to|toward|towards|under|underneath|unlike|until|up|upon|v\.?|versus|via|vs\.?|when|where|whether|while|with|within|without|yet'
+BIG = 'USA|FCC|FTC|DOJ|USC|WTO|EFF|CDT|RSS|LLP|USPS|LLC|CDC|CNMI|IEEE|AIP|IOP'
 PUNCT = r"""!"#$%&'‘()*+,\-./:;?@[\\\]_`{|}~"""
 
 SMALL_WORDS = re.compile(r'^(%s)$' % SMALL, re.I)
+BIG_WORDS = re.compile(r'^(%s)$' % BIG, re.I)
 INLINE_PERIOD = re.compile(r'[a-z][.][a-z]', re.I)
 UC_ELSEWHERE = re.compile(r'[%s]*?[a-zA-Z]+[A-Z]+?' % PUNCT)
 CAPFIRST = re.compile(r"^[%s]*?([A-Za-z])" % PUNCT)
@@ -64,6 +66,9 @@ def titlecase(text):
                 continue
             if SMALL_WORDS.match(word):
                 tc_line.append(word.lower())
+                continue
+            if BIG_WORDS.match(word):
+                tc_line.append(word.upper())
                 continue
 
             match = MAC_MC.match(word)
