@@ -20,8 +20,7 @@
       <span class="marc-tag">\m</span><span class="marc-value">
       {% for author in result.authors %}
         {%- if not loop.first %} - {% endif -%}
-        {{ author.surname }}
-        {%- if author.names %}, {{ author.names|join(' ') }}{% endif -%}        
+        {{ author.short_name }}
       {% endfor %}
       </span>
       <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>

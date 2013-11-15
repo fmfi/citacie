@@ -65,6 +65,10 @@ class Author(object):
     """
     return hash(normalize(self.surname))
   
+  @property
+  def short_name(self):
+    return u', '.join([self.surname,  u' '.join(name[0] + u'.' for name in self.names)])
+  
   @classmethod
   def parse_sn_first(cls, fullname):
     parts = re.split(r'[, ]+', fullname, maxsplit=1)
