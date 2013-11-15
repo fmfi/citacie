@@ -13,6 +13,8 @@ def is_initial(name):
   return False
 
 def normalize(unicode_string):
+  if not isinstance(unicode_string, unicode):
+    unicode_string = unicode_string.decode('UTF-8')
   return ''.join(x for x in unicodedata.normalize('NFKD', unicode_string) if x in string.ascii_letters).lower()
 
 class Author(object):
