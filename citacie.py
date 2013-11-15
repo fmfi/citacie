@@ -93,7 +93,7 @@ def search_citations():
   citing_pubs = [pub for pub in citing_pubs if not pub.autocit]
   
   citing_pubs.sort(key=get_first_author_surname)
-  citing_pubs.sort(key=lambda r: r.year, reverse=True)
+  citing_pubs.sort(key=lambda r: r.year)
   
   return render_template('search-citations.html', query_pubs=pubs, results=citing_pubs, authors=sorted(list(all_authors), key=lambda x: x.surname))
 
