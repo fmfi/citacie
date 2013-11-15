@@ -14,7 +14,8 @@ from itsdangerous import URLSafeSerializer
 
 from model import Identifier, Publication
 
-import local_settings as config
+from local_settings import active_config
+config = active_config(app)
 
 serializer = URLSafeSerializer(config.secret)
 
