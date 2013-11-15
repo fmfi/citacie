@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import types
-import unicodedata
-import string
 import re
 from itertools import izip_longest
+from util import normalize
 
 def is_initial(name):
   if name.endswith('.'):
@@ -11,11 +10,6 @@ def is_initial(name):
   if len(name) == 1:
     return True
   return False
-
-def normalize(unicode_string):
-  if not isinstance(unicode_string, unicode):
-    unicode_string = unicode_string.decode('UTF-8')
-  return ''.join(x for x in unicodedata.normalize('NFKD', unicode_string) if x in string.ascii_letters).lower()
 
 class Author(object):
   def __init__(self, surname, names=None):
