@@ -12,6 +12,7 @@ import time
 import html5lib
 import unicodecsv
 from urlparse import urlparse, parse_qs
+import re
 
 class ScopusWeb(DataSource):
   def __init__(self, additional_headers=None):
@@ -36,8 +37,7 @@ class ScopusWebConnection(DataSourceConnection):
     form_url = 'http://www.scopus.com/search/form.url?display=authorLookup'
     post_url = 'http://www.scopus.com/search/submit/authorlookup.url'
     post2_url = 'http://www.scopus.com/results/authorLookup.url'
-    post3_url = 'http://www.scopus.com/results/handle.url'
-    get4_url = 'http://www.scopus.com/citation/export.url'
+    
     
     r_form = self.session.get(form_url)
     
@@ -80,32 +80,42 @@ class ScopusWebConnection(DataSourceConnection):
     self._delay()
     r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
-    et = html5lib.parse(r_results2.text, treebuilder="lxml")
+    return self._download_from_results_form(r_results2)
+  
+  def _download_from_results_form(self, results_form_response):
+    handle_results_url = 'http://www.scopus.com/results/handle.url'
+    
+    et = html5lib.parse(results_form_response.text, treebuilder="lxml")
     results_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='SearchResultsForm']")
-    form3 = HTMLForm(results_form)
+    form = HTMLForm(results_form)
     
-    form3.check_all('selectedEIDs')
-    form3.set_value('selectDeselectAllAttempt', 'clicked')
-    form3.set_value('clickedLink', 'Export')
-    form3.check_all('selectAllCheckBox')
-    form3.check_all('selectPageCheckBox')
+    form.check_all('selectedEIDs')
+    form.set_value('selectDeselectAllAttempt', 'clicked')
+    form.set_value('clickedLink', 'Export')
+    form.check_all('selectAllCheckBox')
+    form.check_all('selectPageCheckBox')
     
     self._delay()
-    headers = {'Referer': r_results2.url}
-    r_results3 = self.session.post(post3_url, data=form3.to_params(), headers=headers)
+    headers = {'Referer': results_form_response.url}
+    r_results3 = self.session.post(handle_results_url, data=form.to_params(), headers=headers)
     
-    et = html5lib.parse(r_results3.text, treebuilder="lxml")
+    return self._download_from_export_form(r_results3)
+  
+  def _download_from_export_form(self, export_form_response):
+    export_url = 'http://www.scopus.com/citation/export.url'
+    
+    et = html5lib.parse(export_form_response.text, treebuilder="lxml")
     export_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='exportForm']")
-    form4 = HTMLForm(export_form)
+    form = HTMLForm(export_form)
     
-    form4.set_value('exportFormat', 'CSV')
-    form4.set_value('view', 'FullDocument')
+    form.set_value('exportFormat', 'CSV')
+    form.set_value('view', 'FullDocument')
     
     self._delay()
-    headers = {'Referer': r_results3.url}
-    r_results4 = self.session.get(get4_url, params=form4.to_params(), headers=headers)
+    headers = {'Referer': export_form_response.url}
+    csv = self.session.get(export_url, params=form.to_params(), headers=headers)
     
-    return self._parse_csv(r_results4.content, encoding=r_results4.encoding)
+    return self._parse_csv(csv.content, encoding=csv.encoding)
   
   def _parse_csv(self, content, encoding='UTF-8'):
     csv = unicodecsv.DictReader(strip_bom(content).splitlines(), encoding=encoding)
@@ -158,8 +168,46 @@ class ScopusWebConnection(DataSourceConnection):
       yield pub
   
   def search_citations(self, publications):
+    for publication in publications:
+      eid = list(Identifier.find_by_type(publication.identifiers, 'SCOPUS'))
+      if len(eid) == 0:
+        continue
+      eid = eid[0].value
+      detail_url = list(URL.find_by_type(publication.source_urls, 'SCOPUS'))
+      if len(detail_url) == 0:
+        continue
+      detail_url = detail_url[0].value
+      for pub in self._get_citations_from_detail_url(detail_url, eid):
+        yield pub
+  
+  def _get_citations_from_detail_url(self, detail_url, eid):
+    self._delay()
+    add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
+    r = self.session.get(detail_url)
     
-    return []
+    et = html5lib.parse(r.text, treebuilder="lxml")
+    
+    def get_cited_by_link(et):
+      namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
+      cite_links = et.xpath(".//html:a[starts-with(@href, 'http://www.scopus.com/search/submit/citedby.url')]", namespaces=namespaces)
+      
+      for link in cite_links:
+        if 'title' in link.attrib and re.match(r'View details of all \d+ scopus citations', link.attrib['title']):
+          return link.attrib['href']
+      
+      return None
+    
+    link = get_cited_by_link(et)
+    if link == None:
+      raise ValueError('No citation link found')
+    
+    self._delay()
+    headers = {'Referer': r.url}
+    
+    r2 = self.session.get(link, headers=headers)
+    
+    return self._download_from_results_form(r2)
+    
   
   def assign_indexes(self, publications):
     pass
