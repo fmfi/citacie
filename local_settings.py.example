@@ -1,9 +1,11 @@
 from wok import Wok, LAMR
+from scopus import ScopusWeb
+from merge import Merge
 
 class Configuration(object):
   def __init__(self, app):
     # zdroje bibliografickych dat
-    self.data_sources = [Wok(LAMR())]
+    self.data_source = Merge(Wok(LAMR()), ScopusWeb())
 
     # tajny sifrovaci kluc
     self.secret = 'change this!'

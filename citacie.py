@@ -45,10 +45,8 @@ def search_by_author():
   else:
     year = None
   
-  results = []
-  for data_source in config.data_sources:
-    with data_source() as conn:
-      results.extend(conn.search_by_author(surname, name=name, year=year))
+  with config.data_source() as conn:
+    results = list(conn.search_by_author(surname, name=name, year=year))
   
   results.sort(key=lambda r: r.title.lower())
   results.sort(key=lambda r: r.year)
@@ -64,10 +62,8 @@ def search_by_author():
 def search_citations():
   pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
   
-  citing_pubs = []  
-  for data_source in config.data_sources:
-    with data_source() as conn:
-      citing_pubs.extend(conn.search_citations(pubs))
+  with config.data_source() as conn:
+    citing_pubs = list(conn.search_citations(pubs))
   
   def get_first_author_surname(pub):
     if len(pub.authors) == 0:
