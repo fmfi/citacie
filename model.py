@@ -145,7 +145,7 @@ class Index(TaggedValue):
   pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None, times_cited=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -159,6 +159,7 @@ class Publication(object):
     identifiers = identifikatory tejto publikacie
     authors_incomplete = zoznam autorov nie je uplny, obsahuje len par z nich
     indexes = v ktorych citacnych indexoch sa publikacia nachadza
+    times_cited = pocet dokumentov citujucich tuto publikaciu
     """
     self.title = title
     self.authors = authors
@@ -171,6 +172,7 @@ class Publication(object):
     self.issue = issue
     self.special_issue = special_issue
     self.supplement = supplement
+    self.times_cited = times_cited
     if source_urls == None:
       self.source_urls = []
     else:
@@ -222,6 +224,8 @@ class Publication(object):
     r += u'  Citation list URLs: {}\n'.format(cite_urls)
     r += u'  Identifiers: {}\n'.format(identifiers)
     r += u'  Indexes: {}\n'.format(indexes)
+    if self.times_cited:
+      r += u'  Times cited: {}\n'.format(self.times_cited)
     if len(self.errors) > 0:
       errors = u' '.join(unicode(x) for x in self.errors)
       r += u'  Errors: {}\n'.format(errors)
@@ -274,6 +278,8 @@ class Publication(object):
       r += ', {}authors_incomplete=True'.format(nl)
     if len(self.indexes) > 0:
       r += ', {}indexes={}'.format(nl, reprlist(self.indexes))
+    if self.times_cited != None:
+      r += ', {}times_cited={}'.format(nl, self.times_cited)
     r += nl + ')'
     return r
 
@@ -287,7 +293,7 @@ class Publication(object):
       'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
       'errors': self.errors, 'authors_incomplete': self.authors_incomplete,
-      'indexes': dictify(self.indexes)
+      'indexes': dictify(self.indexes), 'times_cited': self.times_cited
     }
   
   @classmethod
@@ -300,5 +306,5 @@ class Publication(object):
       cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
       errors=d['errors'], authors_incomplete=d['authors_incomplete'],
-      indexes=[Index.from_dict(x) for x in d['indexes']]
+      indexes=[Index.from_dict(x) for x in d['indexes']], times_cited=d['times_cited']
     )

@@ -578,8 +578,7 @@ class WokConnection(DataSourceConnection):
     for uid, result in result_by_uids.iteritems():
       pub = pubs_by_uids[uid]
       if 'timesCited' in result:
-        # TODO
-        pass
+        pub.times_cited = int(result['timesCited'])
       if 'sourceURL' in result:
         pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
       if 'citingArticlesURL' in result:

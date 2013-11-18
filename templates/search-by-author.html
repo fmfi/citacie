@@ -73,6 +73,10 @@
       <div class="result-authors empty">No list of authors available</div>
       {% endif %}
       
+      {% if result.times_cited %}
+      {{ result_field('Citation count', result.times_cited, 'times_cited') }}
+      {% endif %}
+      
       {% if result.source_urls or result.cite_urls %}
       <div class="result-urls">
         <ul>
