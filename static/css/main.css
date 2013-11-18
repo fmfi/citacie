@@ -217,16 +217,42 @@ body {
   display: inline-block;
 }
 
+.result-urls {
+  display: inline;
+}
+
 .result-urls ul {
-  display: inline-block;
+  display: inline;
   margin: 0;
   padding: 0;
 }
 
 .result-urls ul li {
   display: inline-block;
-  margin: 0;
+  margin: 0.1ex 0.1ex;
+  font-size: 90%;
   padding: 0;
+}
+
+.result-urls ul li a {
+  display: inline-block;
+  margin: 0;
+  border: 1px solid #999;
+  border-radius: 3px 3px 3px 3px;
+  padding-top: 0.2ex;
+  padding-bottom: 0.2ex;
+  padding-right: 0.4ex;
+  padding-left: 0.4ex;
+  text-decoration: none;
+  color: black;
+  background-color: rgb(235, 235, 235);
+  background-image: linear-gradient(rgb(252, 252, 252), rgb(235, 235, 235));
+  text-shadow: 0px 1px 0px white;
+}
+
+.result-urls ul li a:hover {
+  color: black;
+  text-decoration: underline;
 }
 
 .result-errors ul {

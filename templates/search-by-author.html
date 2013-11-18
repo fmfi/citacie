@@ -80,8 +80,11 @@
       {% if result.source_urls or result.cite_urls %}
       <div class="result-urls">
         <ul>
-        {% for url in result.source_urls + result.cite_urls %}
-          <li><a href="{{ url.value }}" target="_blank">{{ url.description }}</a></li>
+        {% for url in result.source_urls %}
+          <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
+        {% endfor %}
+        {% for url in result.cite_urls %}
+          <li><a href="{{ url.value }}" target="_blank">View citing articles in {{ url.description }}</a></li>
         {% endfor %}
         </ul>
       </div>

@@ -580,9 +580,9 @@ class WokConnection(DataSourceConnection):
       if 'timesCited' in result:
         pub.times_cited = int(result['timesCited'])
       if 'sourceURL' in result:
-        pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
+        pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'Web of Science®'))
       if 'citingArticlesURL' in result:
-        pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'View citing articles in Web of Science®'))
+        pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'Web of Science®'))
       if 'message' in result:
         pub.errors.append(u'Failed loading article URLs: ' + unicode(result['message']))
 

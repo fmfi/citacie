@@ -136,7 +136,7 @@ class ScopusWebConnection(DataSourceConnection):
       url = empty_to_none(line['Link'])
       
       if url:
-        pub.source_urls.append(URL(url, type='SCOPUS', description='View record in SCOPUS'))
+        pub.source_urls.append(URL(url, type='SCOPUS', description='SCOPUS'))
         url_parts = urlparse(url)
         url_query = parse_qs(url_parts.query)
         if 'eid' in url_query and len:
