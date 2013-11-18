@@ -300,5 +300,5 @@ class Publication(object):
       cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
       errors=d['errors'], authors_incomplete=d['authors_incomplete'],
-      indexes=d['indexes']
+      indexes=[Index.from_dict(x) for x in d['indexes']]
     )

@@ -134,6 +134,7 @@ class WokWSConnection(DataSourceConnection):
     retr_params = self.search.factory.create('retrieveParameters')
     retr_params.firstRecord = 1
     retr_params.count = 100
+    time.sleep(1) # throttle
     first_result = self.search.service.search(query_params, retr_params)
     
     if first_result.recordsFound == 0:
@@ -158,27 +159,6 @@ class WokWSConnection(DataSourceConnection):
     
     return records
   
-  def _retrieve_links(self, publications):
-    if self.lamr is None:
-      return
-    pubs_by_uids = {}
-    for pub in publications:
-      for id in Identifier.find_by_type(pub.identifiers, 'WOK'):
-        pubs_by_uids[id.value] = pub
-    uids = pubs_by_uids.keys()
-    result_by_uids = self.lamr.retrieve_by_ids(uids)
-    for uid, result in result_by_uids.iteritems():
-      pub = pubs_by_uids[uid]
-      if 'timesCited' in result:
-        # TODO
-        pass
-      if 'sourceURL' in result:
-        pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
-      if 'citingArticlesURL' in result:
-        pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'View citing articles in Web of Science®'))
-      if 'message' in result:
-        pub.errors.append(u'Failed loading article URLs: ' + unicode(result['message']))
-  
   def search_by_author(self, surname, name=None, year=None):
     # TODO escaping
     query = u'AU=('
@@ -188,36 +168,49 @@ class WokWSConnection(DataSourceConnection):
     query += u')'
     if year is not None:
       query += ' AND PY={}'.format(year)
-    publications =  self._convert_list(self._search(query))
-    self._retrieve_links(publications)
-    return publications
+    return self._convert_list(self._search(query))
   
   def search_citations(self, publications):
     raise NotImplemented # sluzba nepodporuje
   
-  def _find_edition(self, ut):
-    try_editions = ['SCI', 'SSCI', 'AHCI', 'ISTP', 'ISSHP', 'IC', 'CCR', 'BSCI', 'BHCI']
+  def _find_editions(self, uts):
+    try_editions = ['SCI', 'SSCI', 'AHCI', 'ISTP', 'ISSHP', 'BSCI', 'BHCI']
+    
+    unknown = set(uts)
+    utmap = {}
     
     for edition in try_editions:
-      matched = list(self._search(u'UT={}'.format(ut), edition=edition))
-      if len(matched) > 0:
-        return edition
+      if len(unknown) == 0:
+        break
+      query = u'UT=({})'.format(u' OR '.join(ut for ut in unknown))
+      print query
+      for record in self._search(query, edition=edition):
+        record_uid = unicode(record.uid)
+        utmap[record_uid] = edition
+        unknown.remove(record_uid)
     
-    return None
+    return utmap
   
-  def assign_indexes(self, publication):
-    e = list(Index.find_by_type(publication.indexes, 'WOS'))
-    if len(e) > 0:
-      return
+  def assign_indexes(self, publications):
+    pub_by_id = {}
     
-    ut = list(Identifier.find_by_type(publication.identifiers, 'WOK'))
-    if len(ut) == 0:
-      return
-    ut = ut[0].value
+    for pub in publications:
+      e = list(Index.find_by_type(pub.indexes, 'WOS'))
+      if len(e) > 0:
+        continue
     
-    edition = self._find_edition(ut)
-    if edition:
-      publication.indexes.append(Index(edition, type='WOS'))
+      ut = list(Identifier.find_by_type(pub.identifiers, 'WOK'))
+      if len(ut) == 0:
+        continue
+      ut = ut[0].value
+      
+      pub_by_id[ut] = pub
+    
+    editions = self._find_editions(pub_by_id.keys())
+    print repr(editions)
+    for ut, edition in editions.iteritems():
+      print ut, edition
+      pub_by_id[ut].indexes.append(Index(edition, type='WOS'))
 
 class LAMR:
   def __init__(self, delay=1.0):
@@ -515,10 +508,8 @@ class WokWebConnection(DataSourceConnection):
       if len(ut) == 0:
         continue
       ut = ut[0].value.lstrip(u'WOS:')
-      ed = list(Index.find_by_type(publication.indexes, 'WOS'))
       for cite_url in URL.find_by_type(publication.cite_urls, 'WOK'):
         for pub in self._get_citations_from_url(cite_url.value, ut):
-          pub.indexes = ed
           yield pub
   
   def assign_indexes(self, publication):
@@ -526,6 +517,75 @@ class WokWebConnection(DataSourceConnection):
     
   def close(self):
     self.session.close()
+
+class Wok(DataSource):
+  def __init__(self, lamr=None):
+    self.lamr = lamr
+    self.ws = WokWS()
+    self.web = WokWeb()
+  
+  def connect(self):
+    return WokConnection(lamr=self.lamr, ws=self.ws, web=self.web)
+
+class WokConnection(DataSourceConnection):
+  def __init__(self, lamr=None, ws=None, web=None):
+    self.lamr = lamr
+    self.ws = ws
+    self.web = web
+    self._wsconn = None
+    self._webconn = None
+  
+  @property
+  def wsconn(self):
+    if self._wsconn == None:
+      self._wsconn = self.ws()
+    return self._wsconn
+  
+  @property
+  def webconn(self):
+    if self._webconn == None:
+      self._webconn = self.web()
+    return self._webconn
+  
+  def search_by_author(self, surname, name=None, year=None):
+    publications = list(self.wsconn.search_by_author(surname, name=name, year=year))
+    self._retrieve_links(publications)
+    return publications
+  
+  def search_citations(self, publications):
+    citations = list(self.webconn.search_citations(publications))
+    self.assign_indexes(citations)
+    return citations
+  
+  def assign_indexes(self, publications):
+    return self.wsconn.assign_indexes(publications)
+  
+  def close(self):
+    if self._wsconn:
+      self._wsconn.close()
+    if self._webconn:
+      self._webconn.close()
+  
+  def _retrieve_links(self, publications):
+    if self.lamr is None:
+      return
+    pubs_by_uids = {}
+    for pub in publications:
+      for id in Identifier.find_by_type(pub.identifiers, 'WOK'):
+        pubs_by_uids[id.value] = pub
+    uids = pubs_by_uids.keys()
+    result_by_uids = self.lamr.retrieve_by_ids(uids)
+    for uid, result in result_by_uids.iteritems():
+      pub = pubs_by_uids[uid]
+      if 'timesCited' in result:
+        # TODO
+        pass
+      if 'sourceURL' in result:
+        pub.source_urls.append(URL(result['sourceURL'], type='WOK', description=u'View record in Web of Science®'))
+      if 'citingArticlesURL' in result:
+        pub.cite_urls.append(URL(result['citingArticlesURL'], type='WOK', description=u'View citing articles in Web of Science®'))
+      if 'message' in result:
+        pub.errors.append(u'Failed loading article URLs: ' + unicode(result['message']))
 
 if __name__ == '__main__':
   import argparse

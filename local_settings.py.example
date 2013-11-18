@@ -1,14 +1,9 @@
-from wok import WokWS, LAMR, WokWeb
-#from dummy import Dummy
+from wok import Wok, LAMR
 
 class Configuration(object):
   def __init__(self, app):
     # zdroje bibliografickych dat
-    self.data_sources = [WokWS(LAMR())]
-    #self.data_sources = [Dummy()]
-
-    self.cite_data_sources = [WokWeb()]
-    #self.cite_data_sources = []
+    self.data_sources = [Wok(LAMR())]
 
     # tajny sifrovaci kluc
     self.secret = 'change this!'

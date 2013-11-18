@@ -160,7 +160,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     return []
   
-  def assign_indexes(self, publication):
+  def assign_indexes(self, publications):
     pass
   
   def close(self):

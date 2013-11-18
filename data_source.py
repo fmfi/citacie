@@ -35,8 +35,8 @@ class DataSourceConnection(object):
     raise NotImplemented
   
   @abstractmethod
-  def assign_indexes(self, publication):
-    """Zisti a nastavi, v akych indexoch sa publikacia nachadza
+  def assign_indexes(self, publications):
+    """Zisti a nastavi, v akych indexoch sa publikacie nachadzaju
     """
     raise NotImplemented
   

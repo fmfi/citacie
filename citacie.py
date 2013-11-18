@@ -64,13 +64,8 @@ def search_by_author():
 def search_citations():
   pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
   
-  for data_source in config.data_sources:
-    with data_source() as conn:
-      for pub in pubs:
-        conn.assign_indexes(pub)
-  
   citing_pubs = []  
-  for data_source in config.cite_data_sources:
+  for data_source in config.data_sources:
     with data_source() as conn:
       citing_pubs.extend(conn.search_citations(pubs))
   
