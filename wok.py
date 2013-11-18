@@ -77,7 +77,7 @@ class WokWSConnection(DataSourceConnection):
     title = u''.join(extract_label(record.title, 'Title'))
     authors = extract_label(record.authors, 'Authors')
     parsed_authors = [Author.parse_sn_first(unicode(x)) for x in authors]
-    year = extract_single(record.source, 'Published.BiblioYear')
+    year = int(extract_single(record.source, 'Published.BiblioYear'))
     p = Publication(title, parsed_authors, year)
     
     p.published_in = extract_single(record.source, 'SourceTitle')
