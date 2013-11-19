@@ -125,7 +125,7 @@ body {
   padding: 0.2em 0.4em;
 }
 
-.results-search {
+.results-search, .results-title {
   margin-bottom: 1em;
   padding-top: 1em;
   padding-bottom: 1em;
@@ -238,7 +238,7 @@ body {
   margin: 0;
 }
 
-.result a {
+.result a, .query a {
   display: inline-block;
   border: 1px solid #999;
   border-radius: 3px 3px 3px 3px;
@@ -253,7 +253,7 @@ body {
   text-shadow: 0px 1px 0px white;
 }
 
-.result-urls ul li a:hover {
+.result a:hover, .query a:hover {
   color: black;
   text-decoration: underline;
 }
@@ -304,6 +304,17 @@ body {
 .js .result-merge-sources.expanded {
   display: block;
 }
+
+.query {
+  padding: 0.4ex 0.8ex;
+  border: 1px solid #999;
+  border-radius: 5px;
+  margin: 0.4ex 0;
+  color: black;
+  background: white;
+  overflow: hidden;
+}
+
 
 /* ==========================================================================
    Helper classes
