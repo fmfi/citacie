@@ -6,7 +6,7 @@
 {% include 'search-by-author-form.html' %}
 </div></div>
 {% if results %}
-  <form method="POST" action="{{ url_for('search_citations') }}" target="_blank">
+  <form method="POST" action="{{ url_for('search_citations') }}" target="_blank" onsubmit="this.submit();this.reset();return false;">
   <div class="results">
   
   {% for result in results %}
