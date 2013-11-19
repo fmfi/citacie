@@ -202,7 +202,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     link = get_cited_by_link(et)
     if link == None:
-      raise ValueError('No citation link found')
+      return []
     
     self._delay()
     headers = {'Referer': r.url}
