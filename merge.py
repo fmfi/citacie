@@ -59,6 +59,7 @@ class MergeConnection(DataSourceConnection):
       mpub.cite_urls = list(set([x for p in bucket for x in p.cite_urls]))
       mpub.authors_incomplete = lauthors_pub.authors_incomplete
       mpub.indexes = list(set([x for p in bucket for x in p.indexes]))
+      mpub.identifiers = list(set([x for p in bucket for x in p.identifiers]))
       mpub.times_cited = max(p.times_cited for p in bucket)
       mpub.merge_sources = bucket
       merged.append(mpub)
