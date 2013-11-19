@@ -322,12 +322,12 @@ class Publication(object):
       return False
     if normalize(self.title) != normalize(other.title):
       return False
-    if self.pages != other.pages:
+    if normalize(self.pages) != normalize(other.pages):
       return False
-    if self.volume != other.volume:
+    if normalize(self.volume) != normalize(other.volume):
       return False
-    if self.issue != other.issue:
+    if normalize(self.issue) != normalize(other.issue):
       return False
-    if self.published_in != other.published_in:
+    if normalize(self.published_in) != normalize(other.published_in):
       return False
     return True

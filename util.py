@@ -20,6 +20,8 @@ def make_page_range(begin_page, end_page):
   return u'-'.join(page_range)
 
 def normalize(unicode_string):
+  if unicode_string == None:
+    return None
   if not isinstance(unicode_string, unicode):
     unicode_string = unicode_string.decode('UTF-8')
   return ''.join(x for x in unicodedata.normalize('NFKD', unicode_string) if x in string.ascii_letters).lower()
