@@ -175,6 +175,9 @@ class WokWSConnection(DataSourceConnection):
   
   def _find_editions(self, uts):
     try_editions = ['SCI', 'SSCI', 'AHCI', 'ISTP', 'ISSHP', 'BSCI', 'BHCI']
+    edition_caption = {'SCI': 'SCI', 'SSCI': 'SSCI', 'AHCI': 'AHCI',
+                       'ISTP': 'CPCI-S', 'ISSHP': 'CPCI-SSH', 'BSCI': 'BKCI-S',
+                       'BHCI': 'BKCI-SSH'}
     
     unknown = set(uts)
     utmap = {}
@@ -186,7 +189,7 @@ class WokWSConnection(DataSourceConnection):
       print query
       for record in self._search(query, edition=edition):
         record_uid = unicode(record.uid)
-        utmap[record_uid] = edition
+        utmap[record_uid] = edition_caption[edition]
         unknown.remove(record_uid)
     
     return utmap
