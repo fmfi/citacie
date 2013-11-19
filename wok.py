@@ -186,7 +186,6 @@ class WokWSConnection(DataSourceConnection):
       if len(unknown) == 0:
         break
       query = u'UT=({})'.format(u' OR '.join(ut for ut in unknown))
-      print query
       for record in self._search(query, edition=edition):
         record_uid = unicode(record.uid)
         utmap[record_uid] = edition_caption[edition]
@@ -210,9 +209,7 @@ class WokWSConnection(DataSourceConnection):
       pub_by_id[ut] = pub
     
     editions = self._find_editions(pub_by_id.keys())
-    print repr(editions)
     for ut, edition in editions.iteritems():
-      print ut, edition
       pub_by_id[ut].indexes.append(Index(edition, type='WOS'))
 
 class LAMR:
