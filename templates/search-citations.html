@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% import "macros.html" as macros %}
 {% block title %}Vyhľadávanie citácií{% endblock %}
 {% block content %}
 <div class="results-title"><div class="centerbox">
@@ -6,12 +7,6 @@
 </div></div>
 
 <div class="results">
-{% macro result_field(name, value, class) %}
-  <span class="result-field result-field-{{ class }}">
-    <span class="result-fieldname">{{ name }}:</span><!--
-    --><span class="result-value">{{ value }}</span>
-  </span>
-{% endmacro %}
 {% for result in results %}
   <div class="result"><div class="centerbox">
     <div class="result-marc">
@@ -51,6 +46,20 @@
       </ul>
     </div>
     {% endif %}
+    
+    {#
+    {% if result.merge_sources %}
+    <div class="result-merge-sources">
+      {% for source in result.merge_sources %}
+        <div class="result-merge-source">
+          <div class="result-title">{{ source.title }}</div>
+          
+          {{ macros.result_fields(source) }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    #}
   </div></div>
 {% endfor %}
 </div>

@@ -120,6 +120,12 @@ class TaggedValue(object):
   def to_dict(self):
     return {'value': self.value, 'type': self.type, 'description': self.description}
   
+  def __eq__(self, other):
+    return self.type == other.type and self.value == other.value
+  
+  def __hash__(self):
+    return hash((self.type, self.value))
+  
   @classmethod
   def from_dict(cls, d):
     return cls(d['value'], type=d['type'], description=d['description'])
@@ -308,3 +314,20 @@ class Publication(object):
       errors=d['errors'], authors_incomplete=d['authors_incomplete'],
       indexes=[Index.from_dict(x) for x in d['indexes']], times_cited=d['times_cited']
     )
+  
+  def __eq__(self, other):
+    if self.year != other.year:
+      return False
+    if not self.authors_incomplete and not other.authors_incomplete and self.authors != other.authors:
+      return False
+    if normalize(self.title) != normalize(other.title):
+      return False
+    if self.pages != other.pages:
+      return False
+    if self.volume != other.volume:
+      return False
+    if self.issue != other.issue:
+      return False
+    if self.published_in != other.published_in:
+      return False
+    return True

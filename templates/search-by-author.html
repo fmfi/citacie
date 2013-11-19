@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% import "macros.html" as macros %}
 {% block title %}Vyhľadávanie podľa autora{% endblock %}
 {% block content %}
 <div class="results-search"><div class="centerbox">
@@ -7,98 +8,12 @@
 {% if results %}
   <form method="POST" action="{{ url_for('search_citations') }}" target="_blank">
   <div class="results">
-  {% macro result_field(name, value, class) %}
-    <span class="result-field result-field-{{ class }}">
-      <span class="result-fieldname">{{ name }}:</span><!--
-      --><span class="result-value">{{ value }}</span>
-    </span>
-  {% endmacro %}
+  
   {% for result in results %}
     <div class="result"><div class="centerbox">
       <div class="result-title"><input type="checkbox" name="publication" value="{{ result.serialized }}" /> {{ result.title }}</div>
       
-      {{ result_field('Year', result.year, 'year') }}
-      
-      {% if result.published_in %}
-      {{ result_field('Source', result.published_in, 'source') }}
-      {% endif %}
-      
-      {% if result.series %}
-      {{ result_field('Series', result.series, 'series') }}
-      {% endif %}
-      
-      {% if result.volume %}
-      {{ result_field('Volume', result.volume, 'volume') }}
-      {% endif %}
-      
-      {% if result.pages %}
-      {{ result_field('Pages', result.pages, 'pages') }}
-      {% endif %}
-      
-      {% if result.issue %}
-      {{ result_field('Issue', result.issue, 'issue') }}
-      {% endif %}
-      
-      {% if result.special_issue %}
-      {{ result_field('Special issue', result.special_issue, 'special-issue') }}
-      {% endif %}
-      
-      {% if result.supplement %}
-      {{ result_field('Supplement', result.supplement, 'supplement') }}
-      {% endif %}
-      
-      {% if result.authors %}
-      <div class="result-authors">
-      {% if result.authors_incomplete %}
-      more than
-      {% endif %}
-      {{ result.authors|count }}
-      {% if result.authors|count == 1 %}
-      author: 
-      {% else %}
-      authors:
-      {% endif %}
-      {% for author in result.authors[:10] %}
-        {%- if not loop.first %} &mdash; {% endif -%}
-        <span class="result-author">
-        {{ author.surname }}
-        {%- if author.names %}, {{ author.names|join(' ') }}{% endif -%}
-        </span>
-      {% endfor %}
-      {% if result.authors|count > 10 %}
-        + {{ result.authors|count - 10 }} more
-      {% endif %}
-      </div>
-      {% else %}
-      <div class="result-authors empty">No list of authors available</div>
-      {% endif %}
-      
-      {% if result.times_cited %}
-      {{ result_field('Citation count', result.times_cited, 'times_cited') }}
-      {% endif %}
-      
-      {% if result.source_urls or result.cite_urls %}
-      <div class="result-urls">
-        <ul>
-        {% for url in result.source_urls %}
-          <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
-        {% endfor %}
-        {% for url in result.cite_urls %}
-          <li><a href="{{ url.value }}" target="_blank">View citing articles in {{ url.description }}</a></li>
-        {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-      
-      {% if result.errors %}
-      <div class="result-errors">
-        <ul>
-        {% for error in result.errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
+      {{ macros.result_fields(result) }}
     </div></div>
   {% endfor %}
   </div>

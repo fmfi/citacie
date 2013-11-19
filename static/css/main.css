@@ -235,8 +235,11 @@ body {
 }
 
 .result-urls ul li a {
-  display: inline-block;
   margin: 0;
+}
+
+.result a {
+  display: inline-block;
   border: 1px solid #999;
   border-radius: 3px 3px 3px 3px;
   padding-top: 0.2ex;
@@ -285,6 +288,21 @@ body {
 
 .marc-tag {
   font-weight: bold;
+}
+
+.result-merge-source {
+  padding: 0.2ex 0.4ex;
+  border: 1px solid #999;
+  border-radius: 5px;
+  margin: 0.2ex 0;
+}
+
+.js .result-merge-sources {
+  display: none;
+}
+
+.js .result-merge-sources.expanded {
+  display: block;
 }
 
 /* ==========================================================================
