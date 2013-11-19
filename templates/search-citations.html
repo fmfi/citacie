@@ -12,78 +12,87 @@
   </div>
 {% endfor %}
 </div></div>
-
-<div class="results">
-  <div class="centerbox">
-  <h2>Results</h2>
-  </div>
-{% for result in results %}
-  <div class="result"><div class="centerbox">
-    <div class="result-marc">
-      <span class="marc-tag">\9</span> <span class="marc-value">[o ]</span>
-      <span class="marc-tag">\d</span> <span class="marc-value">{{ result.year }}</span>
-      <span class="marc-tag">\m</span><span class="marc-value">
-      {% for author in result.authors %}
-        {%- if not loop.first %} - {% endif -%}
-        {{ author.short_name }}
-      {% endfor %}
-      </span>
-      <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>
-      <span class="marc-tag">\p</span> <span class="marc-value">
-      <span title="{{ result.published_in }}">{{ result.published_in|titlecase }}</span>
-      {%- if result.volume -%}
-      , Vol. {{ result.volume }}
-      {%- endif -%}
-      {%- if result.issue -%}
-      , No. {{ result.issue }}
-      {%- endif -%}
-      , {{ result.year }}
-      </span>
-      {% if result.pages %}
-      <span class="marc-tag">\s</span> <span class="marc-value">s. {{ result.pages }}</span>
-      {% endif %}
-      {% if result.indexes %}
-      <span class="marc-tag">\t</span> <span class="marc-value">{{ result.indexes|join(' ; ', attribute='value') }}</span>
-      {% endif %}
+{{ macros.loader() }}
+{% flush %}
+{% set delayed = get_results() %}
+{{ macros.hide_loader() }}
+{% if delayed.is_error %}
+  <div class="centerbox"><div class="error">Error while processing the request</div></div>
+{% elif delayed.result %}
+  <div class="results">
+    <div class="centerbox">
+    <h2>Citation results</h2>
     </div>
+  {% for result in delayed.result %}
+    <div class="result"><div class="centerbox">
+      <div class="result-marc">
+        <span class="marc-tag">\9</span> <span class="marc-value">[o ]</span>
+        <span class="marc-tag">\d</span> <span class="marc-value">{{ result.year }}</span>
+        <span class="marc-tag">\m</span><span class="marc-value">
+        {% for author in result.authors %}
+          {%- if not loop.first %} - {% endif -%}
+          {{ author.short_name }}
+        {% endfor %}
+        </span>
+        <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>
+        <span class="marc-tag">\p</span> <span class="marc-value">
+        <span title="{{ result.published_in }}">{{ result.published_in|titlecase }}</span>
+        {%- if result.volume -%}
+        , Vol. {{ result.volume }}
+        {%- endif -%}
+        {%- if result.issue -%}
+        , No. {{ result.issue }}
+        {%- endif -%}
+        , {{ result.year }}
+        </span>
+        {% if result.pages %}
+        <span class="marc-tag">\s</span> <span class="marc-value">s. {{ result.pages }}</span>
+        {% endif %}
+        {% if result.indexes %}
+        <span class="marc-tag">\t</span> <span class="marc-value">{{ result.indexes|join(' ; ', attribute='value') }}</span>
+        {% endif %}
+      </div>
 
-  {% if result.source_urls or result.identifiers|tagtype('DOI')|count > 0 %}
-  <div class="result-urls">
-    <ul>
-    {% for url in result.source_urls %}
-      <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
-    {% endfor %}
-    {% for doi in result.identifiers|tagtype('DOI')|map(attribute='value') %}
-      <li><a href="http://dx.doi.org/{{ doi }}" target="_blank">View document</a></li>
-    {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
-    
-    {% if result.errors %}
-    <div class="result-errors">
+    {% if result.source_urls or result.identifiers|tagtype('DOI')|count > 0 %}
+    <div class="result-urls">
       <ul>
-      {% for error in result.errors %}
-        <li>{{ error }}</li>
+      {% for url in result.source_urls %}
+        <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
+      {% endfor %}
+      {% for doi in result.identifiers|tagtype('DOI')|map(attribute='value') %}
+        <li><a href="http://dx.doi.org/{{ doi }}" target="_blank">View document</a></li>
       {% endfor %}
       </ul>
     </div>
     {% endif %}
-    
-    {#
-    {% if result.merge_sources %}
-    <div class="result-merge-sources">
-      {% for source in result.merge_sources %}
-        <div class="result-merge-source">
-          <div class="result-title">{{ source.title }}</div>
-          
-          {{ macros.result_fields(source) }}
-        </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    #}
-  </div></div>
-{% endfor %}
-</div>
+      
+      {% if result.errors %}
+      <div class="result-errors">
+        <ul>
+        {% for error in result.errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      
+      {#
+      {% if result.merge_sources %}
+      <div class="result-merge-sources">
+        {% for source in result.merge_sources %}
+          <div class="result-merge-source">
+            <div class="result-title">{{ source.title }}</div>
+            
+            {{ macros.result_fields(source) }}
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      #}
+    </div></div>
+  {% endfor %}
+  </div>
+{% else %}
+  No records found.
+{% endif %}
 {% endblock %}

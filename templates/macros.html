@@ -92,3 +92,11 @@
   </div>
   {% endif %}
 {% endmacro %}
+
+{% macro loader() %}
+<div id="loader"><img src="{{ url_for('static', filename='img/preloader.gif') }}"><div>Loading...</div></div>
+{% endmacro %}
+
+{% macro hide_loader() %}
+<script type="text/javascript">$('#loader').remove()</script>
+{% endmacro %}

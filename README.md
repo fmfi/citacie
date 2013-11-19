@@ -15,6 +15,12 @@
    pip install names
    ```
 
+  Na testovanie streamovanych odpovedi sa da pouzit cherrypy wsgi server
+
+  ```bash
+  pip install cherrypy
+  ```
+
 ## Konfigurácia
 
    1. Skopírujte `local_settings.py.example` do `local_settings.py`

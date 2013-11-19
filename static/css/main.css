@@ -315,6 +315,26 @@ body {
   overflow: hidden;
 }
 
+.error {
+  font-size: 150%;
+  padding: 0.4ex 0.8ex;
+  border: 1px solid red;
+  border-radius: 5px;
+  margin: 0.4ex 0;
+  color: black;
+  background: #fee;
+  overflow: hidden;
+}
+
+#loader {
+  text-align: center;
+  padding-top: 5em;
+}
+
+#loader div {
+  margin-top: 1em;
+  font-size: 200%;
+}
 
 /* ==========================================================================
    Helper classes

@@ -5,11 +5,17 @@
 <div class="results-search"><div class="centerbox">
 {% include 'search-by-author-form.html' %}
 </div></div>
-{% if results %}
+{{ macros.loader() }}
+{% flush %}
+{% set delayed = get_results() %}
+{{ macros.hide_loader() }}
+{% if delayed.is_error %}
+  <div class="centerbox"><div class="error">Error while processing the request</div></div>
+{% elif delayed.result %}
   <form method="POST" action="{{ url_for('search_citations') }}" target="_blank" onsubmit="this.submit();this.reset();return false;">
   <div class="results">
   
-  {% for result in results %}
+  {% for result in delayed.result %}
     <div class="result"><div class="centerbox">
       <div class="result-title"><input type="checkbox" name="publication" value="{{ result.serialized }}" /> {{ result.title }}</div>
       
@@ -24,5 +30,7 @@
   <div class="results-form-controls">
   </div>
   </form>
+{% else %}
+  No records found.
 {% endif %}
 {% endblock %}

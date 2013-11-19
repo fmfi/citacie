@@ -8,6 +8,8 @@ app = Flask(__name__)
 
 from flask import render_template
 from flask import request
+from flask import Response
+from flask import stream_with_context
 
 from werkzeug.exceptions import BadRequest
 from itsdangerous import URLSafeSerializer
@@ -25,10 +27,57 @@ def filter_tagtype(it, typ):
   return [tag for tag in it if tag.type == typ]
 app.jinja_env.filters['tagtype'] = filter_tagtype
 
+def stream_template(template_name, **context):
+  def buffer_generator(gen):
+    buf = []
+    for item in gen:
+      if isinstance(item, Flush):
+        yield u''.join(buf)
+        del buf[:]
+      else:
+        buf.append(item)
+    if len(buf):
+      yield u''.join(buf)
+  app.update_template_context(context)
+  t = app.jinja_env.get_template(template_name)
+  rv = stream_with_context(buffer_generator(t.generate(context)))
+  return Response(rv)
+
+from jinja2 import nodes
+from jinja2.ext import Extension
+
+class Flush(object):
+  pass
+
+class FlushExtension(Extension):
+  tags = set(['flush'])
+
+  def parse(self, parser):
+    lineno = parser.stream.next().lineno
+    return nodes.CallBlock(self.call_method('_flush', []),
+                            [], [], []).set_lineno(lineno)
+
+  def _flush(self, caller):
+    return Flush()
+
+app.jinja_env.add_extension(FlushExtension)
+
+class DelayedResult(object):
+  def __init__(self, result=None, is_error=False):
+    self.is_error = is_error
+    self.result = result
+
+def delayed(fn):
+  def d():
+    try:
+      return DelayedResult(result=fn())
+    except:
+      return DelayedResult(is_error=True)
+  return d
 
 @app.route('/')
 def index():
-  return render_template('index.html')
+  return stream_template('index.html')
 
 @app.route('/search-by-author')
 def search_by_author():
@@ -48,52 +97,72 @@ def search_by_author():
   else:
     year = None
   
-  with config.data_source() as conn:
-    results = list(conn.search_by_author(surname, name=name, year=year))
+  @delayed
+  def get_results():
+    with config.data_source() as conn:
+      results = list(conn.search_by_author(surname, name=name, year=year))
+    
+    results.sort(key=lambda r: r.title.lower())
+    results.sort(key=lambda r: r.year)
+    
+    for result in results:
+      result.serialized = serializer.dumps(result.to_dict())
+    
+    return results
   
-  results.sort(key=lambda r: r.title.lower())
-  results.sort(key=lambda r: r.year)
-  
-  for result in results:
-    result.serialized = serializer.dumps(result.to_dict())
-  
-  return render_template('search-by-author.html',
+  return stream_template('search-by-author.html',
     search_name=name, search_surname=surname, search_year=year,
-    results=results)
+    get_results=get_results)
 
 @app.route('/search-citations', methods=['POST'])
 def search_citations():
   pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
   
-  with config.data_source() as conn:
-    citing_pubs = list(conn.search_citations(pubs))
+  @delayed
+  def get_results():
+    with config.data_source() as conn:
+      citing_pubs = list(conn.search_citations(pubs))
+    
+    def get_first_author_surname(pub):
+      if len(pub.authors) == 0:
+        return None
+      return pub.authors[0].surname.lower()
+    
+    pubs_authors = set()
+    for pub in pubs:
+      pubs_authors.update(pub.authors)
+    
+    all_authors = set()
+    all_authors.update(pubs_authors)
+    for pub in citing_pubs:
+      all_authors.update(pub.authors)
+    
+    for pub in citing_pubs:
+      pub.autocit = pubs_authors.intersection(pub.authors)
+    
+    citing_pubs = [pub for pub in citing_pubs if not pub.autocit]
+    
+    citing_pubs.sort(key=get_first_author_surname)
+    citing_pubs.sort(key=lambda r: r.year)
+    
+    return citing_pubs
   
-  def get_first_author_surname(pub):
-    if len(pub.authors) == 0:
-      return None
-    return pub.authors[0].surname.lower()
-  
-  pubs_authors = set()
-  for pub in pubs:
-    pubs_authors.update(pub.authors)
-  
-  all_authors = set()
-  all_authors.update(pubs_authors)
-  for pub in citing_pubs:
-    all_authors.update(pub.authors)
-  
-  for pub in citing_pubs:
-    pub.autocit = pubs_authors.intersection(pub.authors)
-  
-  citing_pubs = [pub for pub in citing_pubs if not pub.autocit]
-  
-  citing_pubs.sort(key=get_first_author_surname)
-  citing_pubs.sort(key=lambda r: r.year)
-  
-  return render_template('search-citations.html', query_pubs=pubs, results=citing_pubs, authors=sorted(list(all_authors), key=lambda x: x.surname))
+  return stream_template('search-citations.html', query_pubs=pubs, get_results=get_results)
 
 if __name__ == '__main__':
   import os
+  import sys
+
   if 'CITACIE_DEBUG' in os.environ:
     app.debug = True
-  app.run()
+
+  if len(sys.argv) == 2 and sys.argv[1] == 'cherry':
+    from cherrypy import wsgiserver
+    d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
+    server = wsgiserver.CherryPyWSGIServer(('127.0.0.1', 5000), d)
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        server.stop()
+  else:
+    app.run() # werkzeug
