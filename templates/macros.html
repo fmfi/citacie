@@ -66,7 +66,7 @@
   {{ result_field('Citation count', result.times_cited, 'times_cited') }}
   {% endif %}
   
-  {% if result.source_urls or result.cite_urls %}
+  {% if result.source_urls or result.cite_urls or result.identifiers|tagtype('DOI')|count > 0 %}
   <div class="result-urls">
     <ul>
     {% for url in result.source_urls %}
@@ -74,6 +74,9 @@
     {% endfor %}
     {% for url in result.cite_urls %}
       <li><a href="{{ url.value }}" target="_blank">View citing articles in {{ url.description }}</a></li>
+    {% endfor %}
+    {% for doi in result.identifiers|tagtype('DOI')|map(attribute='value') %}
+      <li><a href="http://dx.doi.org/{{ doi }}" target="_blank">View document</a></li>
     {% endfor %}
     </ul>
   </div>

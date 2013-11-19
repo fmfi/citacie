@@ -21,6 +21,9 @@ serializer = URLSafeSerializer(config.secret)
 
 import titlecase
 app.jinja_env.filters['titlecase'] = titlecase.titlecase
+def filter_tagtype(it, typ):
+  return [tag for tag in it if tag.type == typ]
+app.jinja_env.filters['tagtype'] = filter_tagtype
 
 
 @app.route('/')
