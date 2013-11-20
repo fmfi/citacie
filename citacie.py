@@ -15,6 +15,10 @@ from werkzeug.exceptions import BadRequest
 from itsdangerous import URLSafeSerializer
 
 from model import Identifier, Publication
+import os
+
+if 'CITACIE_DEBUG' in os.environ:
+  app.debug = True
 
 from local_settings import active_config
 config = active_config(app)
@@ -72,6 +76,7 @@ def delayed(fn):
     try:
       return DelayedResult(result=fn())
     except:
+      app.logger.exception('Exception in delayed handler')
       return DelayedResult(is_error=True)
   return d
 
@@ -150,11 +155,7 @@ def search_citations():
   return stream_template('search-citations.html', query_pubs=pubs, get_results=get_results)
 
 if __name__ == '__main__':
-  import os
   import sys
-
-  if 'CITACIE_DEBUG' in os.environ:
-    app.debug = True
 
   if len(sys.argv) == 2 and sys.argv[1] == 'cherry':
     from cherrypy import wsgiserver
