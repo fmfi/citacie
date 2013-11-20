@@ -13,6 +13,7 @@ import html5lib
 import unicodecsv
 from urlparse import urlparse, parse_qs
 import re
+import logging
 
 class ScopusWeb(DataSource):
   def __init__(self, additional_headers=None):
@@ -195,13 +196,16 @@ class ScopusWebConnection(DataSourceConnection):
       cite_links = et.xpath(".//html:a[starts-with(@href, 'http://www.scopus.com/search/submit/citedby.url')]", namespaces=namespaces)
       
       for link in cite_links:
-        if 'title' in link.attrib and re.match(r'View details of all \d+ scopus citations', link.attrib['title']):
-          return link.attrib['href']
+        if 'title' in link.attrib:
+          logging.debug('Trying citation link: %s', link.attrib['title'])
+          if re.match(r'^View details of (?:all \d+ scopus citations|this citation)$', link.attrib['title']):
+            return link.attrib['href']
       
       return None
     
     link = get_cited_by_link(et)
     if link == None:
+      logging.warning('No SCOPUS citation link found')
       return []
     
     self._delay()
