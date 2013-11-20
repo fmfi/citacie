@@ -51,16 +51,19 @@ class MergeConnection(DataSourceConnection):
         return longest
       lauthors_pub, lauthors = find_longest('authors')
       mpub = Publication(find_longest('title')[1], lauthors, cur.year)
+      mpub.authors_incomplete = lauthors_pub.authors_incomplete
       mpub.published_in = find_longest('published_in')[1]
-      mpub.series = find_longest('series')[1]
       mpub.pages = find_longest('pages')[1]
       mpub.volume = find_longest('volume')[1]
+      mpub.series = find_longest('series')[1]
+      mpub.issue = find_longest('volume')[1]
+      mpub.special_issue = find_longest('special_issue')[1]
+      mpub.supplement = find_longest('supplement')[1]
+      mpub.times_cited = max(p.times_cited for p in bucket)
       mpub.source_urls = list(set([x for p in bucket for x in p.source_urls]))
       mpub.cite_urls = list(set([x for p in bucket for x in p.cite_urls]))
-      mpub.authors_incomplete = lauthors_pub.authors_incomplete
-      mpub.indexes = list(set([x for p in bucket for x in p.indexes]))
       mpub.identifiers = list(set([x for p in bucket for x in p.identifiers]))
-      mpub.times_cited = max(p.times_cited for p in bucket)
+      mpub.indexes = list(set([x for p in bucket for x in p.indexes]))
       mpub.merge_sources = bucket
       merged.append(mpub)
     
