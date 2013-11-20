@@ -67,6 +67,15 @@ class ScopusWebConnection(DataSourceConnection):
     r_results = self.session.post(post_url, data=data, headers=headers)
     
     et = html5lib.parse(r_results.text, treebuilder="lxml")
+    
+    namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
+    errors = et.xpath(".//html:form[@name='AuthorLookupResultsForm']//*[contains(concat(' ', normalize-space(@class), ' '), ' errText ')]", namespaces=namespaces)
+
+    for error in errors:
+      if error.text.strip() == 'No authors were found':
+        return []
+      raise IOError('Error encountered during author search: ' + error.text.strip())
+    
     authors_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='AuthorLookupResultsForm']")
     
     form2 = HTMLForm(authors_form)
