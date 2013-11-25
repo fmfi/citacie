@@ -101,6 +101,7 @@ def search_by_author():
   if len(year) > 0:
     if not re.match(r'^\d*$', year):
       raise BadRequest()
+    year = int(year)
   else:
     year = None
   
