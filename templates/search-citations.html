@@ -28,13 +28,13 @@
       <div class="result-marc">
         <span class="marc-tag">\9</span> <span class="marc-value">[o1]</span>
         <span class="marc-tag">\d</span> <span class="marc-value">{{ result.year }}</span>
-        <span class="marc-tag">\m</span><span class="marc-value">
+        <span class="marc-tag">\m</span><span class="marc-value" title="{{ result.authors|join('; ') }}">
         {% for author in result.authors %}
           {%- if not loop.first %} - {% endif -%}
           {{ author.short_name }}
         {% endfor %}
         </span>
-        <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>
+        <span class="marc-tag">\n</span> <span class="marc-value" title="{{ result.title }}">{{ result.title|titlecase(all_caps_only=True) }}</span>
         <span class="marc-tag">\p</span> <span class="marc-value">
         <span title="{{ result.published_in }}">
         {%- if result.published_in -%}

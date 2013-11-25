@@ -27,7 +27,11 @@ config = active_config(app)
 serializer = URLSafeSerializer(config.secret)
 
 import titlecase
-app.jinja_env.filters['titlecase'] = titlecase.titlecase
+def filter_titlecase(text, all_caps_only=False):
+  if all_caps_only and not titlecase.ALL_CAPS.match(text):
+    return text
+  return titlecase.titlecase(text)
+app.jinja_env.filters['titlecase'] = filter_titlecase
 def filter_tagtype(it, typ):
   return [tag for tag in it if tag.type == typ]
 app.jinja_env.filters['tagtype'] = filter_tagtype
