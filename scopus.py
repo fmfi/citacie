@@ -73,7 +73,7 @@ class ScopusWebConnection(DataSourceConnection):
 
     for error in errors:
       if error.text.strip() == 'No authors were found':
-        return []
+        return
       raise IOError('Error encountered during author search: ' + error.text.strip())
     
     authors_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='AuthorLookupResultsForm']")
@@ -90,7 +90,9 @@ class ScopusWebConnection(DataSourceConnection):
     self._delay()
     r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
-    return self._download_from_results_form(r_results2)
+    for pub in self._download_from_results_form(r_results2):
+      if year == None or pub.year == year:
+        yield pub
   
   def _download_from_results_form(self, results_form_response):
     handle_results_url = 'http://www.scopus.com/results/handle.url'

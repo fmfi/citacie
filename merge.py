@@ -16,7 +16,7 @@ class MergeConnection(DataSourceConnection):
   def search_by_author(self, surname, name=None, year=None):
     for data_source in self.data_sources: # TODO move to connection setup to __enter__
       with data_source() as conn:
-        for pub in conn.search_by_author(surname, name=name, year=None):
+        for pub in conn.search_by_author(surname, name=name, year=year):
           yield pub
   
   def search_citations(self, publications):
