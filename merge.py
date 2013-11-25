@@ -56,7 +56,7 @@ class MergeConnection(DataSourceConnection):
       mpub.pages = find_longest('pages')[1]
       mpub.volume = find_longest('volume')[1]
       mpub.series = find_longest('series')[1]
-      mpub.issue = find_longest('volume')[1]
+      mpub.issue = find_longest('issue')[1]
       mpub.special_issue = find_longest('special_issue')[1]
       mpub.supplement = find_longest('supplement')[1]
       mpub.times_cited = max(p.times_cited for p in bucket)
