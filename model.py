@@ -151,7 +151,7 @@ class Index(TaggedValue):
   pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None, times_cited=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None, times_cited=None, article_no=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -166,6 +166,7 @@ class Publication(object):
     authors_incomplete = zoznam autorov nie je uplny, obsahuje len par z nich
     indexes = v ktorych citacnych indexoch sa publikacia nachadza
     times_cited = pocet dokumentov citujucich tuto publikaciu
+    article_no = Article Number
     """
     self.title = title
     self.authors = authors
@@ -179,6 +180,7 @@ class Publication(object):
     self.special_issue = special_issue
     self.supplement = supplement
     self.times_cited = times_cited
+    self.article_no = article_no
     if source_urls == None:
       self.source_urls = []
     else:
@@ -216,6 +218,8 @@ class Publication(object):
       r += u'  Published in: {}\n'.format(self.published_in)
     if self.pages:
       r += u'  Pages: {}\n'.format(self.pages)
+    if self.article_no:
+      r += u'  Article No.: {}\n'.format(self.article_no)
     if self.issue:
       r += u'  Issue: {}\n'.format(self.issue)
     if self.special_issue:
@@ -286,6 +290,8 @@ class Publication(object):
       r += ', {}indexes={}'.format(nl, reprlist(self.indexes))
     if self.times_cited != None:
       r += ', {}times_cited={}'.format(nl, self.times_cited)
+    if self.article_no:
+      r += ', {}article_no={!r}'.format(nl, self.article_no)
     r += nl + ')'
     return r
 
@@ -299,7 +305,8 @@ class Publication(object):
       'supplement': self.supplement, 'source_urls': dictify(self.source_urls),
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
       'errors': self.errors, 'authors_incomplete': self.authors_incomplete,
-      'indexes': dictify(self.indexes), 'times_cited': self.times_cited
+      'indexes': dictify(self.indexes), 'times_cited': self.times_cited,
+      'article_no': self.article_no
     }
   
   @classmethod
@@ -312,7 +319,8 @@ class Publication(object):
       cite_urls=[URL.from_dict(x) for x in d['cite_urls']],
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
       errors=d['errors'], authors_incomplete=d['authors_incomplete'],
-      indexes=[Index.from_dict(x) for x in d['indexes']], times_cited=d['times_cited']
+      indexes=[Index.from_dict(x) for x in d['indexes']], times_cited=d['times_cited'],
+      article_no=d['article_no']
     )
   
   def __eq__(self, other):
@@ -321,6 +329,8 @@ class Publication(object):
     if not self.authors_incomplete and not other.authors_incomplete and self.authors != other.authors:
       return False
     if normalize(self.title) != normalize(other.title):
+      return False
+    if normalize(self.article_no) != normalize(other.article_no):
       return False
     if normalize(self.pages) != normalize(other.pages):
       return False

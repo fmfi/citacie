@@ -60,6 +60,7 @@ class MergeConnection(DataSourceConnection):
       mpub.special_issue = find_longest('special_issue')[1]
       mpub.supplement = find_longest('supplement')[1]
       mpub.times_cited = max(p.times_cited for p in bucket)
+      mpub.article_no = find_longest('article_no')[1]
       mpub.source_urls = list(set([x for p in bucket for x in p.source_urls]))
       mpub.cite_urls = list(set([x for p in bucket for x in p.cite_urls]))
       mpub.identifiers = list(set([x for p in bucket for x in p.identifiers]))

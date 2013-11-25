@@ -87,6 +87,7 @@ class WokWSConnection(DataSourceConnection):
     p.issue = extract_single(record.source, 'Issue')
     p.special_issue = extract_single(record.source, 'SpecialIssue')
     p.supplement = extract_single(record.source, 'Supplement')
+    p.article_no = extract_single(record.other, 'Identifier.article_no')
     
     wokid = Identifier(unicode(record.uid), type='WOK', description='Web Of Knowledge')
     p.identifiers.append(wokid)
@@ -469,6 +470,7 @@ class WokWebConnection(DataSourceConnection):
     col_id = columns.index('UT')
     col_begin_page = columns.index('BP')
     col_end_page = columns.index('EP')
+    col_article_no = columns.index('AR')
     col_book_series = columns.index('BS')
     col_volume = columns.index('VL')
     col_issue = columns.index('IS')
@@ -490,6 +492,8 @@ class WokWebConnection(DataSourceConnection):
         pub.special_issue = data[col_special_issue]
       if data[col_supplement]:
         pub.supplement = data[col_supplement]
+      if data[col_article_no]:
+        pub.article_no = data[col_article_no]
       if data[col_id]:
         pub.identifiers.append(Identifier(data[col_id], type='WOK'))
       if data[col_issn]:
