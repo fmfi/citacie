@@ -326,6 +326,16 @@ body {
   overflow: hidden;
 }
 
+.info {
+  padding: 0.4ex 0.8ex;
+  border: 1px solid blue;
+  border-radius: 5px;
+  margin: 0.4ex 0;
+  color: black;
+  background: #eef;
+  overflow: hidden;
+}
+
 #loader {
   text-align: center;
   padding-top: 5em;
@@ -334,6 +344,11 @@ body {
 #loader div {
   margin-top: 1em;
   font-size: 200%;
+}
+
+.bottomline {
+  border-bottom: 1px solid #999;
+  padding-bottom: 1em;
 }
 
 /* ==========================================================================

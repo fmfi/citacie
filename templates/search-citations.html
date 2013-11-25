@@ -22,85 +22,105 @@
   <div class="results">
     <div class="centerbox">
     <h2>Citation results</h2>
-    </div>
-  {% for result in delayed.result %}
-    <div class="result"><div class="centerbox">
-      <div class="result-marc">
-        <span class="marc-tag">\9</span> <span class="marc-value">[o1]</span>
-        <span class="marc-tag">\d</span> <span class="marc-value">{{ result.year }}</span>
-        <span class="marc-tag">\m</span><span class="marc-value" title="{{ result.authors|join('; ') }}">
-        {% for author in result.authors %}
-          {%- if not loop.first %} - {% endif -%}
-          {{ author.short_name }}
-        {% endfor %}
-        </span>
-        <span class="marc-tag">\n</span> <span class="marc-value" title="{{ result.title }}">{{ result.title|titlecase(all_caps_only=True) }}</span>
-        <span class="marc-tag">\p</span> <span class="marc-value">
-        <span title="{{ result.published_in }}">
-        {%- if result.published_in -%}
-          {{ result.published_in|remove_proceedings|titlecase }}
-        {%- endif -%}
-        {%- if result.published_in and result.series %} : {% endif -%}
-        {%- if result.series -%}
-          {{ result.series|titlecase }}
-        {%- endif -%}
-        </span>
-        {%- if result.volume -%}
-        , Vol. {{ result.volume }}
-        {%- endif -%}
-        {%- if result.issue -%}
-        , No. {{ result.issue }}
-        {%- endif -%}
-        , {{ result.year }}
-        </span>
-        {% if result.pages %}
-        <span class="marc-tag">\s</span> <span class="marc-value">s. {{ result.pages }}</span>
-        {% endif %}
-        {% if result.indexes %}
-        <span class="marc-tag">\t</span> <span class="marc-value">{{ result.indexes|join(' ; ', attribute='value') }}</span>
-        {% endif %}
-      </div>
-
-    {% if result.source_urls or result.identifiers|tagtype('DOI')|count > 0 %}
-    <div class="result-urls">
-      <ul>
-      {% for url in result.source_urls %}
-        <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
-      {% endfor %}
-      {% for doi in result.identifiers|tagtype('DOI')|map(attribute='value') %}
-        <li><a href="http://dx.doi.org/{{ doi }}" target="_blank">View document</a></li>
-      {% endfor %}
-      </ul>
-    </div>
+    {% if delayed.result.autocitation_count %}
+      <div class="info">
+        {{ delayed.result.autocitation_count }} (deduplicated) autocitation{% if delayed.result.autocitation_count > 0 %}s{% endif %} are hidden (
+        {%- for index, index_count in delayed.result.autocitation_count_by_index.items() %}
+          {%- if not loop.first -%}
+            {%- if loop.last %}
+              and
+            {% else -%}
+              , 
+            {% endif -%}
+          {% endif -%}
+          {{ index_count }} from {{ index }}
+        {%- endfor -%}
+        )
+      </div>  
     {% endif %}
-      
-      {% if result.errors %}
-      <div class="result-errors">
+    </div>
+  {% if delayed.result.citations %}
+    <div class="bottomline"><div class="centerbox">Showing {{ delayed.result.citations|count }}
+    record{% if delayed.result.citations|count > 0 %}s{% endif %}:</div></div>
+    {% for result in delayed.result.citations %}
+      <div class="result"><div class="centerbox">
+        <div class="result-marc">
+          <span class="marc-tag">\9</span> <span class="marc-value">[o1]</span>
+          <span class="marc-tag">\d</span> <span class="marc-value">{{ result.year }}</span>
+          <span class="marc-tag">\m</span><span class="marc-value" title="{{ result.authors|join('; ') }}">
+          {% for author in result.authors %}
+            {%- if not loop.first %} - {% endif -%}
+            {{ author.short_name }}
+          {% endfor %}
+          </span>
+          <span class="marc-tag">\n</span> <span class="marc-value" title="{{ result.title }}">{{ result.title|titlecase(all_caps_only=True) }}</span>
+          <span class="marc-tag">\p</span> <span class="marc-value">
+          <span title="{{ result.published_in }}">
+          {%- if result.published_in -%}
+            {{ result.published_in|remove_proceedings|titlecase }}
+          {%- endif -%}
+          {%- if result.published_in and result.series %} : {% endif -%}
+          {%- if result.series -%}
+            {{ result.series|titlecase }}
+          {%- endif -%}
+          </span>
+          {%- if result.volume -%}
+          , Vol. {{ result.volume }}
+          {%- endif -%}
+          {%- if result.issue -%}
+          , No. {{ result.issue }}
+          {%- endif -%}
+          , {{ result.year }}
+          </span>
+          {% if result.pages %}
+          <span class="marc-tag">\s</span> <span class="marc-value">s. {{ result.pages }}</span>
+          {% endif %}
+          {% if result.indexes %}
+          <span class="marc-tag">\t</span> <span class="marc-value">{{ result.indexes|join(' ; ', attribute='value') }}</span>
+          {% endif %}
+        </div>
+
+      {% if result.source_urls or result.identifiers|tagtype('DOI')|count > 0 %}
+      <div class="result-urls">
         <ul>
-        {% for error in result.errors %}
-          <li>{{ error }}</li>
+        {% for url in result.source_urls %}
+          <li><a href="{{ url.value }}" target="_blank">View record in {{ url.description }}</a></li>
+        {% endfor %}
+        {% for doi in result.identifiers|tagtype('DOI')|map(attribute='value') %}
+          <li><a href="http://dx.doi.org/{{ doi }}" target="_blank">View document</a></li>
         {% endfor %}
         </ul>
       </div>
       {% endif %}
-      
-      {#
-      {% if result.merge_sources %}
-      <div class="result-merge-sources">
-        {% for source in result.merge_sources %}
-          <div class="result-merge-source">
-            <div class="result-title">{{ source.title }}</div>
-            
-            {{ macros.result_fields(source) }}
-          </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      #}
-    </div></div>
-  {% endfor %}
+        
+        {% if result.errors %}
+        <div class="result-errors">
+          <ul>
+          {% for error in result.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        
+        {#
+        {% if result.merge_sources %}
+        <div class="result-merge-sources">
+          {% for source in result.merge_sources %}
+            <div class="result-merge-source">
+              <div class="result-title">{{ source.title }}</div>
+              
+              {{ macros.result_fields(source) }}
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        #}
+      </div></div>
+    {% endfor %}
+  {% else %}
+    <div class="centerbox">No matching citations to display.</div>
+  {% endif %}
   </div>
-{% else %}
-  <div class="centerbox">No records found.</div>
 {% endif %}
 {% endblock %}

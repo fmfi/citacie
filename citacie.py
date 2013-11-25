@@ -18,6 +18,8 @@ from model import Identifier, Publication
 import os
 import util
 
+from collections import namedtuple
+
 if 'CITACIE_DEBUG' in os.environ:
   app.debug = True
 
@@ -126,6 +128,8 @@ def search_by_author():
     search_name=name, search_surname=surname, search_year=year,
     get_results=get_results)
 
+SearchCitationsResult = namedtuple('SearchCitationsResult', ['citations', 'autocitation_count', 'autocitation_count_by_index'])
+  
 @app.route('/search-citations', methods=['POST'])
 def search_citations():
   pubs = [Publication.from_dict(serializer.loads(x)) for x in request.form.getlist('publication')]
@@ -152,12 +156,26 @@ def search_citations():
     for pub in citing_pubs:
       pub.autocit = pubs_authors.intersection(pub.authors)
     
-    citing_pubs = [pub for pub in citing_pubs if not pub.autocit]
+    autocit_count = 0
+    autocit_count_by_index = {}
     
-    citing_pubs.sort(key=get_first_author_surname)
-    citing_pubs.sort(key=lambda r: r.year)
+    filtered_pubs = []
     
-    return citing_pubs
+    for pub in citing_pubs:
+      if pub.autocit:
+        autocit_count += 1
+        for index in pub.indexes:
+          if index.value not in autocit_count_by_index:
+            autocit_count_by_index[index.value] = 1
+          else:
+            autocit_count_by_index[index.value] += 1
+      else:
+        filtered_pubs.append(pub)
+    
+    filtered_pubs.sort(key=get_first_author_surname)
+    filtered_pubs.sort(key=lambda r: r.year)
+    
+    return SearchCitationsResult(filtered_pubs, autocit_count, autocit_count_by_index)
   
   return stream_template('search-citations.html', query_pubs=pubs, get_results=get_results)
 
