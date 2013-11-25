@@ -154,7 +154,14 @@ class ScopusWebConnection(DataSourceConnection):
       else:
         authors = Author.parse_sn_first_list(line['Authors'], separator=u',')
       pub = Publication(line['Title'], authors, int(line['Year']))
-      pub.published_in = empty_to_none(line['Source title'])
+      source_title = empty_to_none(line['Source title'])
+      if source_title:
+        source_title, replacements = re.subn(r' \(including subseries [^)]+\)', '', source_title)
+        source_title = source_title.strip()
+        if replacements:
+          pub.series = source_title
+        else:
+          pub.published_in = source_title
       pub.volume = empty_to_none(line['Volume'])
       pub.issue = empty_to_none(line['Issue'])
       pub.pages = make_page_range(empty_to_none(line['Page start']), empty_to_none(line['Page end']))
