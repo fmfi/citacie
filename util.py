@@ -2,7 +2,7 @@
 import codecs
 import unicodedata
 import string
-
+import re
 
 def strip_bom(bytestr):
   if bytestr.startswith(codecs.BOM_UTF8):
@@ -25,3 +25,6 @@ def normalize(unicode_string):
   if not isinstance(unicode_string, unicode):
     unicode_string = unicode_string.decode('UTF-8')
   return ''.join(x for x in unicodedata.normalize('NFKD', unicode_string) if x in string.ascii_letters).lower()
+
+def remove_proceedings(text):
+  return re.sub(r'\s*,\s*proceedings\s*$', '', text, flags=re.IGNORECASE)

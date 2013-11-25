@@ -16,6 +16,7 @@ from itsdangerous import URLSafeSerializer
 
 from model import Identifier, Publication
 import os
+import util
 
 if 'CITACIE_DEBUG' in os.environ:
   app.debug = True
@@ -30,6 +31,7 @@ app.jinja_env.filters['titlecase'] = titlecase.titlecase
 def filter_tagtype(it, typ):
   return [tag for tag in it if tag.type == typ]
 app.jinja_env.filters['tagtype'] = filter_tagtype
+app.jinja_env.filters['remove_proceedings'] = util.remove_proceedings
 
 def stream_template(template_name, **context):
   def buffer_generator(gen):

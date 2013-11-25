@@ -36,7 +36,15 @@
         </span>
         <span class="marc-tag">\n</span> <span class="marc-value">{{ result.title }}</span>
         <span class="marc-tag">\p</span> <span class="marc-value">
-        <span title="{{ result.published_in }}">{{ result.published_in|titlecase }}</span>
+        <span title="{{ result.published_in }}">
+        {%- if result.published_in -%}
+          {{ result.published_in|remove_proceedings|titlecase }}
+        {%- endif -%}
+        {%- if result.published_in and result.series %} : {% endif -%}
+        {%- if result.series -%}
+          {{ result.series|titlecase }}
+        {%- endif -%}
+        </span>
         {%- if result.volume -%}
         , Vol. {{ result.volume }}
         {%- endif -%}
