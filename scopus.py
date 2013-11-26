@@ -3,12 +3,12 @@ from data_source import DataSource, DataSourceConnection
 from model import Publication, Author, Identifier, URL, Index
 from htmlform import HTMLForm
 from util import strip_bom, make_page_range
+from throttle import ThreadingThrottler
 
 from collections import OrderedDict
 from urllib import urlencode, quote
 import requests
 from requests.utils import add_dict_to_cookiejar
-import time
 import html5lib
 import unicodecsv
 from urlparse import urlparse, parse_qs
@@ -16,31 +16,32 @@ import re
 import logging
 
 class ScopusWeb(DataSource):
-  def __init__(self, additional_headers=None):
+  def __init__(self, additional_headers=None, throttler=None):
     if additional_headers == None:
       additional_headers = {'User-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0'}
     self.additional_headers = additional_headers
+    if throttler == None:
+      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, timeout=60)
+    self.throttler = throttler
     
   def connect(self):
-    return ScopusWebConnection(additional_headers=self.additional_headers)
+    return ScopusWebConnection(self.throttler, additional_headers=self.additional_headers)
   
 class ScopusWebConnection(DataSourceConnection):
-  def __init__(self, additional_headers=None):
+  def __init__(self, throttler, additional_headers=None):
     self.additional_headers = additional_headers
     self.session = requests.Session()
     if additional_headers:
       self.session.headers.update(additional_headers)
-  
-  def _delay(self):
-    time.sleep(1)
+    self.throttler = throttler
   
   def search_by_author(self, surname, name=None, year=None):
     form_url = 'http://www.scopus.com/search/form.url?display=authorLookup'
     post_url = 'http://www.scopus.com/search/submit/authorlookup.url'
     post2_url = 'http://www.scopus.com/results/authorLookup.url'
     
-    
-    r_form = self.session.get(form_url)
+    with self.throttler:
+      r_form = self.session.get(form_url)
     
     data = [
       ('origin', 'searchauthorlookup'),
@@ -63,8 +64,8 @@ class ScopusWebConnection(DataSourceConnection):
     headers = {'Referer': r_form.url}
     add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
     
-    self._delay()
-    r_results = self.session.post(post_url, data=data, headers=headers)
+    with self.throttler:
+      r_results = self.session.post(post_url, data=data, headers=headers)
     
     et = html5lib.parse(r_results.text, treebuilder="lxml")
     
@@ -87,8 +88,8 @@ class ScopusWebConnection(DataSourceConnection):
     
     headers = {'Referer': r_results.url}
     
-    self._delay()
-    r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
+    with self.throttler:
+      r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
     for pub in self._download_from_results_form(r_results2):
       if year == None or pub.year == year:
@@ -107,9 +108,10 @@ class ScopusWebConnection(DataSourceConnection):
     form.check_all('selectAllCheckBox')
     form.check_all('selectPageCheckBox')
     
-    self._delay()
     headers = {'Referer': results_form_response.url}
-    r_results3 = self.session.post(handle_results_url, data=form.to_params(), headers=headers)
+    
+    with self.throttler:
+      r_results3 = self.session.post(handle_results_url, data=form.to_params(), headers=headers)
     
     return self._download_from_export_form(r_results3)
   
@@ -123,9 +125,9 @@ class ScopusWebConnection(DataSourceConnection):
     form.set_value('exportFormat', 'CSV')
     form.set_value('view', 'FullDocument')
     
-    self._delay()
     headers = {'Referer': export_form_response.url}
-    csv = self.session.get(export_url, params=form.to_params(), headers=headers)
+    with self.throttler:
+      csv = self.session.get(export_url, params=form.to_params(), headers=headers)
     
     return self._parse_csv(csv.content, encoding=csv.encoding)
   
@@ -204,9 +206,9 @@ class ScopusWebConnection(DataSourceConnection):
         yield pub
   
   def _get_citations_from_detail_url(self, detail_url, eid):
-    self._delay()
     add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
-    r = self.session.get(detail_url)
+    with self.throttler:
+      r = self.session.get(detail_url)
     
     et = html5lib.parse(r.text, treebuilder="lxml")
     
@@ -227,10 +229,10 @@ class ScopusWebConnection(DataSourceConnection):
       logging.warning('No SCOPUS citation link found')
       return []
     
-    self._delay()
     headers = {'Referer': r.url}
     
-    r2 = self.session.get(link, headers=headers)
+    with self.throttler:
+      r2 = self.session.get(link, headers=headers)
     
     return self._download_from_results_form(r2)
     
