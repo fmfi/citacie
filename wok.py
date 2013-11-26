@@ -31,21 +31,17 @@ def pages(item_count, page_size, start_page=1, start_index=1, end_inclusive=Fals
     yield Page(start_page + page_index, page_start_index, page_end_index, page_item_count)
 
 class WokWS(DataSource):
-  def __init__(self, lamr=None):
-    self.lamr = lamr
-  
   def connect(self):
-    return WokWSConnection(lamr=self.lamr)
+    return WokWSConnection()
 
 class WokWSConnection(DataSourceConnection):
-  def __init__(self, lamr=None):
+  def __init__(self):
     self.wsdl_auth = 'http://search.webofknowledge.com/esti/wokmws/ws/WOKMWSAuthenticate?wsdl'
     self.wsdl_search = 'http://search.webofknowledge.com/esti/wokmws/ws/WokSearchLite?wsdl'
-    self.lamr = lamr
     
     self.auth = Client(self.wsdl_auth)
     self.session_id = self.auth.service.authenticate()
-    self.search = Client(self.wsdl_search, headers={'Cookie': 'SID=' + self.session_id})    
+    self.search = Client(self.wsdl_search, headers={'Cookie': 'SID=' + self.session_id})
   
   def close(self):
     self.auth.service.closeSession()
