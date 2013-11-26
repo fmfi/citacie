@@ -193,6 +193,12 @@ body {
   text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.1);
 }
 
+.result-field-artno .result-fieldname {
+  color: white;
+  background: #009E8E;
+  text-shadow: 0px 1px 0px rgba(0, 0, 0, 0.1);
+}
+
 .result-field-series .result-fieldname {
   color: white;
   background: #FFB300;

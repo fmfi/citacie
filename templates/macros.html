@@ -20,6 +20,10 @@
   {{ result_field('Volume', result.volume, 'volume') }}
   {% endif %}
   
+  {% if result.article_no %}
+  {{ result_field('Art. No.', result.article_no, 'artno') }}
+  {% endif %}
+
   {% if result.pages %}
   {{ result_field('Pages', result.pages, 'pages') }}
   {% endif %}

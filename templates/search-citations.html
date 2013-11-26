@@ -72,9 +72,17 @@
           {%- endif -%}
           , {{ result.year }}
           </span>
-          {% if result.pages %}
-          <span class="marc-tag">\s</span> <span class="marc-value">s. {{ result.pages }}</span>
+          <span class="marc-tag">\s</span> <span class="marc-value">
+          {% if result.article_no %}
+          Art. No. {{ result.article_no }}
+          {%- endif -%}
+          {%- if result.article_no and result.pages -%}
+          , 
           {% endif %}
+          {% if result.pages %}
+          s. {{ result.pages }}
+          {% endif %}
+          </span>
           {% if result.indexes %}
           <span class="marc-tag">\t</span> <span class="marc-value">{{ result.indexes|join(' ; ', attribute='value') }}</span>
           {% endif %}
