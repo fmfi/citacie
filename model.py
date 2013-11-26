@@ -76,7 +76,7 @@ class Author(object):
     parts = re.split(r'[, ]+', fullname, maxsplit=1)
     surname = parts[0]
     if len(parts) > 1:
-      parts2 = re.split(r'([. ]+)', parts[1])
+      parts2 = re.split(r'([. -]+)', parts[1])
       names = []
       for name, separator in izip_longest(parts2[::2], parts2[1::2], fillvalue=''):
         if len(name) == 0:
