@@ -21,7 +21,7 @@ class ScopusWeb(DataSource):
       additional_headers = {'User-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0'}
     self.additional_headers = additional_headers
     if throttler == None:
-      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, timeout=60)
+      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, finished_delay=0.5, timeout=60)
     self.throttler = throttler
     
   def connect(self):
@@ -40,7 +40,7 @@ class ScopusWebConnection(DataSourceConnection):
     post_url = 'http://www.scopus.com/search/submit/authorlookup.url'
     post2_url = 'http://www.scopus.com/results/authorLookup.url'
     
-    with self.throttler:
+    with self.throttler():
       r_form = self.session.get(form_url)
     
     data = [
@@ -64,7 +64,7 @@ class ScopusWebConnection(DataSourceConnection):
     headers = {'Referer': r_form.url}
     add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
     
-    with self.throttler:
+    with self.throttler():
       r_results = self.session.post(post_url, data=data, headers=headers)
     
     et = html5lib.parse(r_results.text, treebuilder="lxml")
@@ -88,7 +88,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     headers = {'Referer': r_results.url}
     
-    with self.throttler:
+    with self.throttler():
       r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
     for pub in self._download_from_results_form(r_results2):
@@ -110,7 +110,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     headers = {'Referer': results_form_response.url}
     
-    with self.throttler:
+    with self.throttler():
       r_results3 = self.session.post(handle_results_url, data=form.to_params(), headers=headers)
     
     return self._download_from_export_form(r_results3)
@@ -126,7 +126,7 @@ class ScopusWebConnection(DataSourceConnection):
     form.set_value('view', 'FullDocument')
     
     headers = {'Referer': export_form_response.url}
-    with self.throttler:
+    with self.throttler():
       csv = self.session.get(export_url, params=form.to_params(), headers=headers)
     
     return self._parse_csv(csv.content, encoding=csv.encoding)
@@ -207,7 +207,7 @@ class ScopusWebConnection(DataSourceConnection):
   
   def _get_citations_from_detail_url(self, detail_url, eid):
     add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true'})
-    with self.throttler:
+    with self.throttler():
       r = self.session.get(detail_url)
     
     et = html5lib.parse(r.text, treebuilder="lxml")
@@ -231,7 +231,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     headers = {'Referer': r.url}
     
-    with self.throttler:
+    with self.throttler():
       r2 = self.session.get(link, headers=headers)
     
     return self._download_from_results_form(r2)

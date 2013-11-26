@@ -47,7 +47,7 @@ class WokAuthService(object):
     self.throttler = throttler
   
   def authenticate(self):
-    with self.throttler:
+    with self.throttler():
       return WokSession(self.client.service.authenticate())
   
   def close_session(self, session):
@@ -57,7 +57,7 @@ class WokAuthService(object):
 class WokWS(DataSource):
   def __init__(self, throttler=None, auth=None):
     if throttler == None:
-      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, timeout=60)
+      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, finished_delay=0.5, timeout=60)
     if auth == None:
       auth = WokAuthService()
     self.throttler = throttler
@@ -83,7 +83,7 @@ class WokWSConnection(DataSourceConnection):
     params = self.search.factory.create('retrieveParameters')
     params.firstRecord = 1
     params.count = 2
-    with self.throttler:
+    with self.throttler():
       return self.search.service.retrieveById(databaseId='WOK', uid=uid,
         queryLanguage='en', retrieveParameters=params)
   
@@ -165,7 +165,7 @@ class WokWSConnection(DataSourceConnection):
     retr_params = self.search.factory.create('retrieveParameters')
     retr_params.firstRecord = 1
     retr_params.count = 100
-    with self.throttler:
+    with self.throttler():
       first_result = self.search.service.search(query_params, retr_params)
     
     if first_result.recordsFound == 0:
@@ -181,7 +181,7 @@ class WokWSConnection(DataSourceConnection):
     # retrieve additional records
     for pagenum in range(1, pages):
       retr_params.firstRecord += retr_params.count
-      with self.throttler:
+      with self.throttler():
         additional_result = self.search.service.retrieve(first_result.queryId, retr_params)
       records.extend(additional_result.records)
     
@@ -282,7 +282,7 @@ class LAMR:
     return results
   
   def _retrieve(self, fields, uids):
-    with self.throttler:
+    with self.throttler():
       req_body = self._build_retrieve_request(fields, uids)
       with closing(urllib2.urlopen(self.post_url, req_body)) as f:
         response = f.read()
@@ -315,7 +315,7 @@ class WokWeb(DataSource):
       additional_headers = {'User-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0'}
     self.additional_headers = additional_headers
     if throttler == None:
-      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, timeout=60)
+      throttler = ThreadingThrottler(number=1, period=1, min_delay=1, finished_delay=0.5, timeout=60)
     self.throttler = throttler
     
   def connect(self):
@@ -426,7 +426,7 @@ class WokWebConnection(DataSourceConnection):
     if name:
       fname += ' {}*'.format(name)
     self.browser['value(input2)'] = str(fname)
-    with self.throttler:
+    with self.throttler():
       r = self.browser.submit()
     print r.get_data()
     
@@ -441,7 +441,7 @@ class WokWebConnection(DataSourceConnection):
     return self.session.cookies['SID'].strip('"')
   
   def _get_citations_from_url(self, cite_url, origin_ut):
-    with self.throttler:
+    with self.throttler():
       r = self.session.get(cite_url)
     count = self._parse_citations_list(r.text)
     
@@ -480,7 +480,7 @@ class WokWebConnection(DataSourceConnection):
       data['fields_selection'] = 'USAGEIND AUTHORSIDENTIFIERS ACCESSION_NUM FUNDING SUBJECT_CATEGORY JCR_CATEGORY LANG IDS PAGEC SABBR CITREFC ISSN PUBINFO KEYWORDS CITTIMES ADDRS CONFERENCE_SPONSORS DOCTYPE ABSTRACT CONFERENCE_INFO SOURCE TITLE AUTHORS  '
       data['save_options'] = 'tabMacUTF8'
       
-      with self.throttler:
+      with self.throttler():
         r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
       
       for pub in self._parse_tab_delimited(r2.text):
