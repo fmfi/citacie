@@ -53,7 +53,7 @@
   {% endif %}
   {% for author in result.authors[:10] %}
     {%- if not loop.first %} &mdash; {% endif -%}
-    <span class="result-author">
+    <span class="result-author" {% if author.unparsed_text %} title="{{ author.unparsed_text }}"{% endif %}>
     {{ author.surname }}
     {%- if author.names %}, {{ author.names|join(' ') }}{% endif -%}
     </span>

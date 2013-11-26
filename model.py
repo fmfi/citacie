@@ -14,7 +14,7 @@ def is_initial(name):
   return False
 
 class Author(object):
-  def __init__(self, surname, names=None):
+  def __init__(self, surname, names=None, unparsed_text=None):
     if not isinstance(surname, types.StringTypes):
       raise TypeError('surname must be string')
     self.surname = surname
@@ -24,6 +24,7 @@ class Author(object):
       self.names = [names]
     else:
       self.names = list(names)
+    self.unparsed_text = unparsed_text
   
   def __unicode__(self):
     return u' '.join(self.names + [self.surname])
@@ -35,15 +36,18 @@ class Author(object):
     r = 'Author({!r}'.format(self.surname)
     if len(self.names) > 0:
       r += ', names={!r}'.format(self.names)
+    if self.unparsed_text:
+      r += ', unparsed_text={!r}'.format(self.unparsed_text)
     r += ')'
     return r
   
   def to_dict(self):
-    return {'names': self.names, 'surname': self.surname}
+    return {'names': self.names, 'surname': self.surname,
+            'unparsed_text': self.unparsed_text}
   
   @classmethod
   def from_dict(cls, d):
-    return cls(d['surname'], names=d['names'])
+    return cls(d['surname'], names=d['names'], unparsed_text=d.get('unparsed_text'))
   
   def __eq__(self, other):
     if not isinstance(other, Author):
@@ -86,7 +90,7 @@ class Author(object):
           names.append(name + ('.' if initial else ''))
     else:
       names = None
-    return cls(surname, names)
+    return cls(surname, names, unparsed_text=fullname)
   
   @classmethod
   def parse_sn_first_list(cls, names, separator=u';'):
