@@ -9,6 +9,8 @@ def is_initial(name):
     return True
   if len(name) == 1:
     return True
+  if name.isupper() and len(name) <= 3:
+    return True
   return False
 
 class Author(object):
@@ -68,16 +70,23 @@ class Author(object):
   @classmethod
   def parse_sn_first(cls, fullname):
     parts = re.split(r'[, ]+', fullname, maxsplit=1)
+    surname = parts[0]
     if len(parts) > 1:
       parts2 = re.split(r'([. ]+)', parts[1])
       names = []
       for name, separator in izip_longest(parts2[::2], parts2[1::2], fillvalue=''):
         if len(name) == 0:
           continue
-        names.append(name + separator.strip())
+        initial = '.' in separator
+        # Osetrime inicialky, ak su napriklad Smith, JD
+        if not surname.isupper() and name.isupper() and len(name) <= 3:
+          for char in name:
+            names.append(char + '.')
+        else:
+          names.append(name + ('.' if initial else ''))
     else:
       names = None
-    return cls(parts[0], names)
+    return cls(surname, names)
   
   @classmethod
   def parse_sn_first_list(cls, names, separator=u';'):
