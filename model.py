@@ -68,17 +68,54 @@ class Author(object):
     return hash(normalize(self.surname))
   
   @property
+  def formatted_surname(self):
+    if self.surname.isupper():
+      if self.surname.startswith(u'MC'):
+        return u'Mc' + self.surname[2:].title()
+      elif self.surname.startswith(u'MAC'):
+        return u'Mac' + self.surname[3:].title()
+      else:
+        return self.surname.title()
+    return self.surname
+  
+  @property
   def short_name(self):
-    return u', '.join([self.surname.title(),  u' '.join(name[0].upper() + u'.' for name in self.names)])
+    return u', '.join([self.formatted_surname,  u' '.join(name[0].upper() + u'.' for name in self.names)])
   
   @classmethod
   def parse_sn_first(cls, fullname):
-    parts = re.split(r'[, ]+', fullname, maxsplit=1)
-    surname = parts[0]
-    if len(parts) > 1:
-      parts2 = re.split(r'([. -]+)', parts[1])
+    if ',' in fullname:
+      parts = re.split(r'[,]+', fullname, maxsplit=1)
+      surname = parts[0].strip()
+      names = parts[1]
+    else:
+      parts = re.split(r'[ ]+', fullname)
+      surname_parts = []
+      surname_next = False
+      consumed = False
+      for i in range(len(parts)):
+        if parts[i].lower() in [u'de', u'von']:
+          surname_next = True
+          surname_parts.append(parts[i])
+          continue
+        if surname_next:
+          surname_parts.append(parts[i])
+          surname_next = False
+          continue
+        if not consumed:
+          surname_parts.append(parts[i])
+          consumed = True
+          continue
+        names = u' '.join(parts[i:])
+        break
+      else:
+        names = ''
+      surname = u' '.join(surname_parts)
+    
+    if len(names) > 0:
+      name_parts = re.split(r'([. -]+)', names)
       names = []
-      for name, separator in izip_longest(parts2[::2], parts2[1::2], fillvalue=''):
+      for name, separator in izip_longest(name_parts[::2], name_parts[1::2], fillvalue=''):
         if len(name) == 0:
           continue
         initial = '.' in separator
