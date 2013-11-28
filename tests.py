@@ -20,6 +20,8 @@ author_parse_test_cases = [
   (u'Nobrega de Sousa V.', Author(u'Nobrega de Sousa', [u'V.'])),
   (u'Nobrega de Sousa V', Author(u'Nobrega de Sousa', [u'V.'])),
   (u'Nobrega de Sousa V', Author(u'Nobrega de Sousa', [u'V.'])),
+  (u'de Sousa V.', Author(u'de Sousa', [u'V.'])),
+  (u'de Sousa Vito', Author(u'de Sousa', [u'Vito'])),
   (u'de Menezes Neto, R.', Author(u'de Menezes Neto', [u'R.'])),
   (u'de Menezes Neto R.', Author(u'de Menezes Neto', [u'R.'])),
   (u'McDonald R.', Author(u'McDonald', [u'R.'])),
@@ -27,6 +29,7 @@ author_parse_test_cases = [
 
 author_short_name_test_cases = [
   (Author(u'MCDONALD', [u'R.']), u'McDonald, R.'),
+  (Author(u'NOBREGA DE SOUSA', [u'V.']), u'Nobrega de Sousa, V.'),
 ]
 
 def check_parsed_author(source, expected):

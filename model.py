@@ -70,12 +70,18 @@ class Author(object):
   @property
   def formatted_surname(self):
     if self.surname.isupper():
-      if self.surname.startswith(u'MC'):
-        return u'Mc' + self.surname[2:].title()
-      elif self.surname.startswith(u'MAC'):
-        return u'Mac' + self.surname[3:].title()
-      else:
-        return self.surname.title()
+      parts = self.surname.split()
+      new_parts = []
+      for part in parts:
+        if part in [u'DE', u'VON']:
+          new_parts.append(part.lower())
+        elif part.startswith(u'MC'):
+          new_parts.append(u'Mc' + part[2:].title())
+        elif self.surname.startswith(u'MAC'):
+          new_parts.append(u'Mac' + part[3:].title())
+        else:
+          new_parts.append(part.title())
+      return u' '.join(new_parts)
     return self.surname
   
   @property
@@ -94,6 +100,9 @@ class Author(object):
       surname_next = False
       consumed = False
       for i in range(len(parts)):
+        if parts[i].endswith('.'):
+          names = u' '.join(parts[i:])
+          break
         if parts[i].lower() in [u'de', u'von']:
           surname_next = True
           surname_parts.append(parts[i])
@@ -102,7 +111,7 @@ class Author(object):
           surname_parts.append(parts[i])
           surname_next = False
           continue
-        if not consumed:
+        if i == 0 or (not consumed and i != len(parts) -1 ):
           surname_parts.append(parts[i])
           consumed = True
           continue
