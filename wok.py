@@ -106,6 +106,14 @@ class WokWSConnection(DataSourceConnection):
         raise ValueError('Expecting single value only for {}, publication id {}'.format(label, wokid), str(record))
       return unicode(l[0])
     
+    def extract_concat(group, label, delim=u'|'):
+      l = extract_label(group, label)
+      if l == None:
+        return None
+      if len(l) == 0:
+        return None
+      return delim.join(unicode(x) for x in l)
+    
     title = u''.join(extract_label(record.title, 'Title'))
     authors = [a for p in record.authors for a in p.value]
     parsed_authors = [Author.parse_sn_first(unicode(x)) for x in authors]
@@ -115,7 +123,7 @@ class WokWSConnection(DataSourceConnection):
     p.published_in = extract_single(record.source, 'SourceTitle')
     p.pages = extract_single(record.source, 'Pages')
     p.volume = extract_single(record.source, 'Volume')
-    p.series = extract_single(record.source, 'BookSeriesTitle')
+    p.series = extract_concat(record.source, 'BookSeriesTitle')
     p.issue = extract_single(record.source, 'Issue')
     p.special_issue = extract_single(record.source, 'SpecialIssue')
     p.supplement = extract_single(record.source, 'Supplement')
