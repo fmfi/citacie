@@ -88,6 +88,8 @@ class WokWSConnection(DataSourceConnection):
         queryLanguage='en', retrieveParameters=params)
   
   def _convert_to_publication(self, record):
+    wokid = Identifier(unicode(record.uid), type='WOK', description='Web Of Knowledge')
+    
     def extract_label(group, label):
       for pair in group:
         if pair.label == label:
@@ -101,7 +103,7 @@ class WokWSConnection(DataSourceConnection):
       if len(l) == 0:
         return None
       if len(l) > 1:
-        raise ValueError('Expecting single value only')
+        raise ValueError('Expecting single value only for {}, publication id {}'.format(label, wokid), str(record))
       return unicode(l[0])
     
     title = u''.join(extract_label(record.title, 'Title'))
@@ -119,7 +121,6 @@ class WokWSConnection(DataSourceConnection):
     p.supplement = extract_single(record.source, 'Supplement')
     p.article_no = extract_single(record.other, 'Identifier.article_no')
     
-    wokid = Identifier(unicode(record.uid), type='WOK', description='Web Of Knowledge')
     p.identifiers.append(wokid)
     
     idtypes = {'Identifier.Isbn': 'ISBN',
