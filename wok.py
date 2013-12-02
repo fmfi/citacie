@@ -16,6 +16,10 @@ from urllib import urlencode, quote
 import requests
 from util import make_page_range
 from throttle import ThreadingThrottler
+import threading
+import logging
+
+logger = logging.getLogger('citacie.wok')
 
 Page = namedtuple('Page', ('page', 'start_index', 'end_index', 'count'))
 
@@ -37,6 +41,9 @@ class WokSession(object):
     if created == None:
       created = time.time()
     self.created = created
+  
+  def __str__(self):
+    return '{} {}'.format(self.id, self.created)
 
 class WokAuthService(object):
   def __init__(self, throttler=None):
@@ -53,6 +60,83 @@ class WokAuthService(object):
   def close_session(self, session):
     client = Client(self.wsdl_auth, headers={'Cookie': 'SID=' + session.id})
     return client.service.closeSession()
+
+class PoolingWokAuthService(object):
+  def __init__(self, real, pool_max=4, timeout=60, session_max_idle=10*60):
+    self.real = real
+    self.pool_max = pool_max
+    self.pool_avail = []
+    self.pool_size = 0
+    self.timeout = timeout
+    session_max_idle = 10
+    self.session_max_idle = session_max_idle
+    self._cv = threading.Condition()
+    self._cleanup_timer = None
+  
+  def authenticate(self):
+    if self.timeout:
+      deadline = time.time() + self.timeout
+    with self._cv:
+      while len(self.pool_avail) == 0 and self.pool_size >= self.pool_max:
+        now = time.time()
+        if deadline < now:
+          raise ValueError('Timeout while waiting for session auth')
+        self._cv.wait(max(0.1, deadline - now))
+      if len(self.pool_avail) > 0:
+        t, session = self.pool_avail.pop(0)
+        now = time.time()
+        logger.debug('Returning pooled session %s, idle %ss', session, now - t)
+        return session
+      self.pool_size += 1
+    try:
+      logger.debug('No free session, but pool not full. Obtaining new session')
+      return self.real.authenticate()
+    except:
+      with self._cv:
+        self.pool_size -= 1
+      raise
+  
+  def close_session(self, session):
+    with self._cv:
+      logger.debug('Returning session %s into pool', session)
+      self.pool_avail.append((time.time(), session))
+      self._cv.notify()
+      self._schedule_cleanup()
+        
+  
+  def _schedule_cleanup(self):
+    if self._cleanup_timer != None:
+      return
+    logger.debug('Setting up a cleanup timer')
+    self._cleanup_timer = threading.Timer(self.session_max_idle, self.cleanup_sessions)
+    self._cleanup_timer.start()
+  
+  def cleanup_sessions(self):
+    with self._cv:
+      new_avail = []
+      now = time.time()
+      to_close = []
+      for t, session in self.pool_avail:
+        if t < now - self.session_max_idle:
+          to_close.append(session)
+        else:
+          new_avail.append((t, session))
+      self.pool_avail = new_avail
+    for session in to_close:
+      try:
+        logger.debug('Cleaning up session %s', session)
+        self.real.close_session(session)
+      except:
+        logger.exception('Exception while freeing pooled session')
+      with self._cv:
+        self.pool_size -= 1
+        self._cv.notify()
+    with self._cv:
+      self._cleanup_timer = None
+      if len(self.pool_avail) > 0:
+        logger.debug('Setting up a cleanup timer')
+        self._schedule_cleanup()
+        
 
 class WokWS(DataSource):
   def __init__(self, throttler=None, auth=None):
