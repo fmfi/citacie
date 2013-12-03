@@ -74,6 +74,19 @@ Citation search{% endblock %}
           {%- endif -%}
           , {{ result.year }}
           </span>
+          {% if result.in_index('CPCI-S', 'BKCI-S') %}
+          <span class="marc-tag">\r</span> <span class="marc-value">
+          {% if result.publisher_city %}
+          {{ result.publisher_city|titlecase(all_caps_only=True) }}
+          {% endif %}
+          {% if result.publisher_city and result.publisher %}
+          :
+          {% endif %}
+          {% if result.publisher %}
+          {{ result.publisher|titlecase(all_caps_only=True) }}
+          {% endif %}
+          </span>
+          {% endif %}
           <span class="marc-tag">\s</span> <span class="marc-value">
           {% if result.article_no %}
           Art. No. {{ result.article_no }}

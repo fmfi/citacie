@@ -210,7 +210,7 @@ class Index(TaggedValue):
   pass
 
 class Publication(object):
-  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None, times_cited=None, article_no=None):
+  def __init__(self, title, authors, year, published_in=None, pages=None, volume=None, series=None, issue=None, special_issue=None, supplement=None, source_urls=None, cite_urls=None, identifiers=None, errors=None, authors_incomplete=False, indexes=None, times_cited=None, article_no=None, publisher=None, publisher_city=None):
     """Reprezentuje jednu publikaciu
     title = nazov publikacie
     authors = zoznam autorov publikacie
@@ -240,6 +240,8 @@ class Publication(object):
     self.supplement = supplement
     self.times_cited = times_cited
     self.article_no = article_no
+    self.publisher = publisher
+    self.publisher_city = publisher_city
     if source_urls == None:
       self.source_urls = []
     else:
@@ -289,6 +291,10 @@ class Publication(object):
       r += u'  Volume: {}\n'.format(self.volume)
     if self.series:
       r += u'  Series: {}\n'.format(self.series)
+    if self.publisher:
+      r += u'  Publisher: {}\n'.format(self.publisher)
+    if self.publisher_city:
+      r += u'  Publisher city: {}\n'.format(self.publisher_city)
     r += u'  Source URLs: {}\n'.format(source_urls)
     r += u'  Citation list URLs: {}\n'.format(cite_urls)
     r += u'  Identifiers: {}\n'.format(identifiers)
@@ -351,6 +357,10 @@ class Publication(object):
       r += ', {}times_cited={}'.format(nl, self.times_cited)
     if self.article_no:
       r += ', {}article_no={!r}'.format(nl, self.article_no)
+    if self.publisher:
+      r += ', {}publisher={!r}'.format(nl, self.publisher)
+    if self.publisher_city:
+      r += ', {}publisher_city={!r}'.format(nl, self.publisher_city)
     r += nl + ')'
     return r
 
@@ -365,7 +375,7 @@ class Publication(object):
       'cite_urls': dictify(self.cite_urls), 'identifiers': dictify(self.identifiers),
       'errors': self.errors, 'authors_incomplete': self.authors_incomplete,
       'indexes': dictify(self.indexes), 'times_cited': self.times_cited,
-      'article_no': self.article_no
+      'article_no': self.article_no, 'publisher': self.publisher, 'publisher_city': self.publisher_city
     }
   
   @classmethod
@@ -379,7 +389,7 @@ class Publication(object):
       identifiers=[Identifier.from_dict(x) for x in d['identifiers']],
       errors=d['errors'], authors_incomplete=d['authors_incomplete'],
       indexes=[Index.from_dict(x) for x in d['indexes']], times_cited=d['times_cited'],
-      article_no=d['article_no']
+      article_no=d['article_no'], publisher=d.get('publisher'), publisher_city=d.get('publisher_city')
     )
   
   def __eq__(self, other):
@@ -400,3 +410,9 @@ class Publication(object):
     if normalize(self.published_in) != normalize(other.published_in):
       return False
     return True
+  
+  def in_index(self, *values):
+    for index in self.indexes:
+      if index.value in values:
+        return True
+    return False

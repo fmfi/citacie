@@ -174,6 +174,7 @@ class ScopusWebConnection(DataSourceConnection):
       pub.pages = make_page_range(empty_to_none(line['Page start']), empty_to_none(line['Page end']))
       pub.times_cited = empty_to_none(line['Cited by'])
       pub.article_no = empty_to_none(line['Art. No.'])
+      pub.publisher = empty_to_none(line['Publisher'])
       url = empty_to_none(line['Link'])
       
       if url:
