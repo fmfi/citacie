@@ -182,7 +182,10 @@ def search_citations():
 if __name__ == '__main__':
   import sys
 
-  if len(sys.argv) == 2 and sys.argv[1] == 'cherry':
+  if len(sys.argv) >= 2 and sys.argv[1] == 'redis':
+    if len(sys.argv) == 4 and sys.argv[2] == 'get':
+      sys.stdout.write(config.redis.get(sys.argv[3]))
+  elif len(sys.argv) == 2 and sys.argv[1] == 'cherry':
     from cherrypy import wsgiserver
     d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
     server = wsgiserver.CherryPyWSGIServer(('127.0.0.1', 5000), d)
