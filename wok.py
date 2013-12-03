@@ -613,6 +613,7 @@ class WokWebConnection(DataSourceConnection):
     col_supplement = columns.index('SU')
     col_publisher = columns.index('PU')
     col_publisher_city = columns.index('PI')
+    col_edition = columns.index('SE')
     for line in lines[1:]:
       data = line.split('\t')
       pub = Publication(data[col_title], Author.parse_sn_first_list(data[col_authors]), int(data[col_year]))
@@ -635,6 +636,8 @@ class WokWebConnection(DataSourceConnection):
         pub.publisher = data[col_publisher]
       if data[col_publisher_city]:
         pub.publisher_city = data[col_publisher_city]
+      if data[col_edition]:
+        pub.edition = data[col_edition]
       if data[col_id]:
         pub.identifiers.append(Identifier(data[col_id], type='WOK'))
       if data[col_issn]:

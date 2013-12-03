@@ -65,6 +65,10 @@ Citation search{% endblock %}
           {%- if result.series -%}
             {{ result.series|titlecase }}
           {%- endif -%}
+          {%- if (result.published_in or result.series) and result.edition %} : {% endif -%}
+          {%- if result.edition -%}
+            {{ result.edition|titlecase }}
+          {%- endif -%}
           </span>
           {%- if result.volume -%}
           , Vol. {{ result.volume }}
