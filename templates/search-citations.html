@@ -76,7 +76,9 @@ Citation search{% endblock %}
           {%- if result.issue -%}
           , No. {{ result.issue }}
           {%- endif -%}
+          {% if not result.in_index('CPCI-S', 'BKCI-S') %}
           , {{ result.year }}
+          {% endif %}
           </span>
           {% if result.in_index('CPCI-S', 'BKCI-S') %}
           <span class="marc-tag">\r</span> <span class="marc-value">
@@ -88,7 +90,8 @@ Citation search{% endblock %}
           {% endif %}
           {% if result.publisher %}
           {{ result.publisher|titlecase(all_caps_only=True) }}
-          {% endif %}
+          {%- endif -%}
+          , {{ result.year }}
           </span>
           {% endif %}
           <span class="marc-tag">\s</span> <span class="marc-value">
