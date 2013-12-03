@@ -7,6 +7,7 @@ import redis
 import hashlib
 import json
 import retools.lock
+import time
 
 serializer = json
 
@@ -139,6 +140,22 @@ class RedisCachedConnection(DataSourceConnection):
     if self._real_conn:
       self._real_conn.close()
 
+class RequestLogger(object):
+  def __init__(self, redis, namespace):
+    self.redis = redis
+    self.namespace = namespace
+  
+  def log(self, method, key_data, value):
+    key = hash_key(*key_data)
+    method_ns = '{}:{}'.format(self.namespace, method)
+    fqkey = '{}:{}:data'.format(method_ns, key)
+    fqkey_params = '{}:{}:params'.format(method_ns, key)
+    pl = self.redis.pipeline()
+    pl.set(fqkey, value)
+    pl.set(fqkey_params, dumps(key_data))
+    pl.zadd(method_ns, time.time(), key)
+    pl.execute()
+
 class RedisLogDataSource(RedisWrappedDataSource):
   def connect(self):
     return RedisLogConnection(self.redis, self, self.real.connect())
@@ -147,24 +164,21 @@ class RedisLogConnection(DataSourceConnection):
   def __init__(self, redis, ds, real_conn):
     self.real_conn = real_conn
     self.ds = ds
-    self.redis = redis
-    self.namespace = 'citacie:log:request:{}'.format(self.ds.key)
+    self.rl = RequestLogger(redis, 'citacie:log:request:{}'.format(self.ds.key))
   
   def search_by_author(self, surname, name=None, year=None):
-    key = '{}:search_by_author:{}:data'.format(self.namespace, dumps([surname, name, year]))
     pubs = []
     for pub in self.real_conn.search_by_author(surname, name=name, year=year):
       yield pub
       pubs.append(pub)
-    self.redis.set(key, dumps([pub.to_dict() for pub in pubs]))
+    self.rl.log('search_by_author', [surname, name, year], dumps([pub.to_dict() for pub in pubs]))
   
   def search_citations(self, publications):
-    key = '{}:search_citations:{}:data'.format(self.namespace, dumps([[pub.to_dict() for pub in publications]]))
     cits = []
     for cit in self.real_conn.search_citations(publications):
       yield cit
       cits.append(cit)
-    self.redis.set(key, dumps([cit.to_dict() for cit in cits]))
+    self.rl.log('search_citations', [[pub.to_dict() for pub in publications]], dumps([cit.to_dict() for cit in cits]))
   
   def assign_indexes(self, publications):
     return self.real_conn.assign_indexes(publications)
@@ -183,19 +197,13 @@ class RedisLogWokWS(WokWS):
 
 class RedisLogWokWSConnection(WokWSConnection):
   def __init__(self, redis, key, *args, **kwargs):
-    self.redis = redis
-    self.key = key
+    self.rl = RequestLogger(redis, 'citacie:log:request:{}'.format(key))
     super(RedisLogWokWSConnection, self).__init__(*args, **kwargs)
   
   def _log_search(self, context, records):
     if context is None:
       return
-    
-    methodname = context[0]
-    args = context[1:]
-    
-    fqkey = 'citacie:log:request:{}:{}:{}:data'.format(self.key, methodname, dumps(args))
-    self.redis.set(fqkey, str(records))
+    self.rl.log(context[0], context[1:], str(records))
 
 class RedisLogWokWeb(WokWeb):
   def __init__(self, redis=None, key=None, *args, **kwargs):
@@ -208,13 +216,11 @@ class RedisLogWokWeb(WokWeb):
 
 class RedisLogWokWebConnection(WokWebConnection):
   def __init__(self, redis, key, *args, **kwargs):
-    self.redis = redis
-    self.key = key
+    self.rl = RequestLogger(redis, 'citacie:log:request:{}'.format(key))
     super(RedisLogWokWebConnection, self).__init__(*args, **kwargs)
   
   def _log_tab_delimited(self, cite_url, origin_ut, text):
-    fqkey = 'citacie:log:request:{}:_get_citations_from_url:{}:data'.format(self.key, dumps([cite_url, origin_ut]))
-    self.redis.set(fqkey, text)
+    self.rl.log('_get_citations_from_url', [origin_ut], text)
 
 class RedisLogScopusWeb(ScopusWeb):
   def __init__(self, redis, key, *args, **kwargs):
@@ -227,14 +233,10 @@ class RedisLogScopusWeb(ScopusWeb):
 
 class RedisLogScopusWebConnection(ScopusWebConnection):
   def __init__(self, redis, key, *args, **kwargs):
-    self.redis = redis
-    self.key = key
+    self.rl = RequestLogger(redis, 'citacie:log:request:{}'.format(key))
     super(RedisLogScopusWebConnection, self).__init__(*args, **kwargs)
   
   def _log_csv(self, context, content, encoding='UTF-8'):
     if context is None:
       return
-    methodname = context[0]
-    params = context[1:]
-    fqkey = 'citacie:log:request:{}:{}:{}:data'.format(self.key, methodname, dumps(params))
-    self.redis.set(fqkey, content)
+    self.rl.log(context[0], context[1:], content)
