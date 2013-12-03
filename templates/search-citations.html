@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 {% import "macros.html" as macros %}
-{% block title %}Citation search{% endblock %}
+{% block title %}
+{%- if query_pubs|count > 0 %}{{ query_pubs[0].title }} - {% endif -%}
+Citation search{% endblock %}
 {% block content %}
 <div class="results-title"><div class="centerbox">
 <h1>Citation search</h1>

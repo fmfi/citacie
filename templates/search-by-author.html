@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% import "macros.html" as macros %}
-{% block title %}Search by author{% endblock %}
+{% block title %}{{ search_surname or '' }} {{ search_name or '' }} {{ search_year or '' }} - Search by author{% endblock %}
 {% block content %}
 <div class="results-search"><div class="centerbox">
 {% include 'search-by-author-form.html' %}
