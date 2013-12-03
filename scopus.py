@@ -155,12 +155,18 @@ class ScopusWebConnection(DataSourceConnection):
           r.append(v)
       return r
     
+    def to_num(x):
+      x = x.strip()
+      if len(x) == 0:
+        return 0
+      return int(x)
+    
     for line in csv:
       if line['Authors'] == '[No author name available]':
         authors = []
       else:
         authors = Author.parse_sn_first_list(line['Authors'], separator=u',')
-      pub = Publication(line['Title'], authors, int(line['Year']))
+      pub = Publication(line['Title'], authors, to_num(line['Year']))
       source_title = empty_to_none(line['Source title'])
       if source_title:
         source_title, replacements = re.subn(r' \(including subseries [^)]+\)', '', source_title)
