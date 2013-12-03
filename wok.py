@@ -237,6 +237,9 @@ class WokWSConnection(DataSourceConnection):
       return None
     return self._convert_to_publication(result.records[0])
   
+  def _log_search(self, context, records):
+    pass
+  
   def _search(self, query, database_id='WOS', timespan=None, edition=None):
     query_params = self.search.factory.create('queryParameters')
     query_params.databaseId = database_id
@@ -262,6 +265,7 @@ class WokWSConnection(DataSourceConnection):
       first_result = self.search.service.search(query_params, retr_params)
     
     if first_result.recordsFound == 0:
+      self._log_search(['_search', query, database_id, timespan, edition], [])
       return []
     
     records = []
@@ -281,6 +285,7 @@ class WokWSConnection(DataSourceConnection):
     if len(records) < first_result.recordsFound:
       raise ValueError('Failed retrieving all results')
     
+    self._log_search(['_search', query, database_id, timespan, edition], records)
     return records
   
   def search_by_author(self, surname, name=None, year=None):
@@ -533,6 +538,9 @@ class WokWebConnection(DataSourceConnection):
   def _get_sid(self):
     return self.session.cookies['SID'].strip('"')
   
+  def _log_tab_delimited(self, cite_url, origin_ut, text):
+    pass
+  
   def _get_citations_from_url(self, cite_url, origin_ut):
     with self.throttler():
       r = self.session.get(cite_url)
@@ -575,6 +583,8 @@ class WokWebConnection(DataSourceConnection):
       
       with self.throttler():
         r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
+      
+      self._log_tab_delimited(cite_url, origin_ut, r2.text)
       
       for pub in self._parse_tab_delimited(r2.text):
         yield pub

@@ -91,11 +91,11 @@ class ScopusWebConnection(DataSourceConnection):
     with self.throttler():
       r_results2 = self.session.post(post2_url, data=form2.to_params(), headers=headers)
     
-    for pub in self._download_from_results_form(r_results2):
+    for pub in self._download_from_results_form(r_results2, context=['_search_by_author', surname, name]):
       if year == None or pub.year == year:
         yield pub
   
-  def _download_from_results_form(self, results_form_response):
+  def _download_from_results_form(self, results_form_response, context=None):
     handle_results_url = 'http://www.scopus.com/results/handle.url'
     
     et = html5lib.parse(results_form_response.text, treebuilder="lxml")
@@ -113,9 +113,9 @@ class ScopusWebConnection(DataSourceConnection):
     with self.throttler():
       r_results3 = self.session.post(handle_results_url, data=form.to_params(), headers=headers)
     
-    return self._download_from_export_form(r_results3)
+    return self._download_from_export_form(r_results3, context=context)
   
-  def _download_from_export_form(self, export_form_response):
+  def _download_from_export_form(self, export_form_response, context=None):
     export_url = 'http://www.scopus.com/citation/export.url'
     
     et = html5lib.parse(export_form_response.text, treebuilder="lxml")
@@ -129,7 +129,12 @@ class ScopusWebConnection(DataSourceConnection):
     with self.throttler():
       csv = self.session.get(export_url, params=form.to_params(), headers=headers)
     
+    self._log_csv(context, csv.content, encoding=csv.encoding)
+    
     return self._parse_csv(csv.content, encoding=csv.encoding)
+  
+  def _log_csv(self, context, content, encoding='UTF-8'):
+    pass
   
   def _parse_csv(self, content, encoding='UTF-8'):
     csv = unicodecsv.DictReader(strip_bom(content).splitlines(), encoding=encoding)
@@ -234,7 +239,7 @@ class ScopusWebConnection(DataSourceConnection):
     with self.throttler():
       r2 = self.session.get(link, headers=headers)
     
-    return self._download_from_results_form(r2)
+    return self._download_from_results_form(r2, context=['_get_citations_from_detail_url', detail_url, eid])
     
   
   def assign_indexes(self, publications):
