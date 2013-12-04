@@ -76,7 +76,7 @@ Citation search{% endblock %}
           {%- if result.issue -%}
           , No. {{ result.issue }}
           {%- endif -%}
-          {% if not result.in_index('CPCI-S', 'BKCI-S') %}
+          {%- if not result.in_index('CPCI-S', 'BKCI-S') -%}
           , {{ result.year }}
           {% endif %}
           </span>
