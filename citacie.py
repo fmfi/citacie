@@ -21,6 +21,12 @@ import util
 from collections import namedtuple
 import datetime
 
+# csv modul ma nastaveny limit 128KB na field, co je pre nase ucely malo
+# nastavme ho na 8MB nech to nehadze errory
+import unicodecsv
+unicodecsv.field_size_limit(8388608)
+
+
 if 'CITACIE_DEBUG' in os.environ:
   app.debug = True
 
