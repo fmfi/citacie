@@ -19,6 +19,7 @@ import os
 import util
 
 from collections import namedtuple
+import datetime
 
 if 'CITACIE_DEBUG' in os.environ:
   app.debug = True
@@ -38,6 +39,9 @@ def filter_tagtype(it, typ):
   return [tag for tag in it if tag.type == typ]
 app.jinja_env.filters['tagtype'] = filter_tagtype
 app.jinja_env.filters['remove_proceedings'] = util.remove_proceedings
+def filter_datetime(timestamp, fmt='%Y-%m-%d %H:%M:%S'):
+  return datetime.datetime.fromtimestamp(timestamp).strftime(fmt)
+app.jinja_env.filters['datetime'] = filter_datetime
 
 def stream_template(template_name, **context):
   def buffer_generator(gen):
@@ -178,6 +182,43 @@ def search_citations():
     return SearchCitationsResult(filtered_pubs, autocit_count, autocit_count_by_index)
   
   return stream_template('search-citations.html', query_pubs=pubs, get_results=get_results)
+
+@app.route('/admin/')
+def admin_status():
+  r = config.redis
+  request_keys = [
+    'SCOPUS:_get_citations_from_detail_url',
+    'SCOPUS:_search_by_author',
+    'SCOPUS:search_by_author',
+    'SCOPUS:search_citations',
+    'WOK-web:_get_citations_from_url',
+    'WOK-ws:_search',
+    'WOK:search_by_author',
+    'WOK:search_citations',
+  ]
+  pipe = r.pipeline()
+  for key in request_keys:
+    pipe.zrevrange('citacie:log:request:{}'.format(key), 0, 25, withscores=True)
+  results = pipe.execute()
+  
+  return render_template('admin-status.html', results=zip(request_keys, results))
+
+def admin_request_by_key(key):
+  r = config.redis
+  pipe = r.pipeline()
+  pipe.get('citacie:log:request:{}:params'.format(key))
+  pipe.get('citacie:log:request:{}:data'.format(key))
+  return pipe.execute()
+
+@app.route('/admin/request/<key>')
+def admin_request(key):
+  params, data = admin_request_by_key(key)
+  return render_template('admin-request.html', key=key, params=params, data=data)
+
+@app.route('/admin/request/<key>/raw')
+def admin_request_raw(key):
+  params, data = admin_request_by_key(key)
+  return Response(data, mimetype='text/plain')
 
 if __name__ == '__main__':
   import sys

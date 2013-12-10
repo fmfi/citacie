@@ -357,6 +357,18 @@ body {
   padding-bottom: 1em;
 }
 
+.timekeys {
+  border-collapse: collapse;
+}
+
+.timekeys td {
+  padding: 0.1em 0.2em;
+}
+
+.timekeys tr:nth-child(odd) {
+  background: #eee;
+}
+
 /* ==========================================================================
    Helper classes
    ========================================================================== */

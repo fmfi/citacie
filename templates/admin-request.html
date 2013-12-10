@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}Status - Admin{% endblock %}
+{% block content %}
+<div class="centerbox">
+  <h1>{{ key }}</h1>
+  <pre>{{ params }}</pre>
+  <p><a href="{{ url_for('admin_request_raw', key=key) }}">Download</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block title %}Status - Admin{% endblock %}
+{% block content %}
+<div class="centerbox">
+  {% for typ, keys in results %}
+  <h1>{{ typ }}</h1>
+  <table class="timekeys">
+  {% for key, timestamp in keys %}
+    <tr>
+      <td>{{ timestamp|datetime }}</td>
+      <td><a href="{{ url_for('admin_request', key='{}:{}'.format(typ, key)) }}">{{ key }}</a></td>
+    </tr>
+  {% endfor %}
+  </table>
+  {% endfor %}
+</div>
+{% endblock %}
