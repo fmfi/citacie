@@ -56,10 +56,10 @@ class HTMLForm(object):
           append(name, value)
     
   def set_value(self, name, value):
-    inp = self[name]
-    if inp:
+    try:
+      inp = self[name]
       inp.value = value
-    else:
+    except KeyError:
       self.inputs.append(HTMLInput(name, value))
   
   def check_all(self, name):

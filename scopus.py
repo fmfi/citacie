@@ -35,7 +35,7 @@ class ScopusWebConnection(DataSourceConnection):
       self.session.headers.update(additional_headers)
     self.throttler = throttler
   
-  def search_by_author(self, surname, name=None, year=None):
+  def search_by_author_old(self, surname, name=None, year=None):
     form_url = 'http://www.scopus.com/search/form.url?display=authorLookup'
     post_url = 'http://www.scopus.com/search/submit/authorlookup.url'
     post2_url = 'http://www.scopus.com/results/authorLookup.url'
@@ -95,6 +95,46 @@ class ScopusWebConnection(DataSourceConnection):
       if year == None or pub.year == year:
         yield pub
   
+  def search_by_author(self, surname, name=None, year=None):
+    form_url = 'http://www.scopus.com'
+    post_url = 'http://www.scopus.com/search/submit/basic.url'
+    
+    with self.throttler():
+      r_form = self.session.get(form_url)
+    
+    add_dict_to_cookiejar(self.session.cookies, {'javaScript': 'true', 'xmlHttpRequest': 'true'})
+    
+    et = html5lib.parse(r_form.text, treebuilder="lxml")
+    namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
+    search_form_html = et.find("//{http://www.w3.org/1999/xhtml}form[@name='BasicValidatedSearchForm']")
+    
+    search_form = HTMLForm(search_form_html)
+    search_term = surname
+    if name:
+      search_term += ', {}'.format(name)
+    search_form.set_value('searchterm1', search_term)
+    search_form.set_value('field1', 'AUTHOR-NAME')
+    if year != None:
+      search_form.set_value('yearFrom', str(year))
+      search_form.set_value('yearTo', str(year))
+      search_form.set_value('dateType', 'Publication_Date_Type')
+    
+    headers = {'Referer': r_form.url}
+    
+    with self.throttler():
+      r_results = self.session.post(post_url, data=search_form.to_params(), headers=headers)
+    
+    et = html5lib.parse(r_results.text, treebuilder="lxml")
+    namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
+    errors = et.xpath(".//html:form[@name='SearchResultsForm']//*[contains(concat(' ', normalize-space(@class), ' '), ' errText ')]", namespaces=namespaces)
+
+    for error in errors:
+      if error.text.strip() == 'No results were found.':
+        return []
+      raise IOError('Error encountered during document search: ' + error.text.strip())
+    
+    return self._download_from_results_form(r_results, context=['_search_by_author', surname, name, year])
+
   def _download_from_results_form(self, results_form_response, context=None):
     handle_results_url = 'http://www.scopus.com/results/handle.url'
     
