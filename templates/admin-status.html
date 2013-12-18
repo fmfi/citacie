@@ -2,6 +2,18 @@
 {% block title %}Status - Admin{% endblock %}
 {% block content %}
 <div class="centerbox">
+  <div>
+  <h1>Redis status</h1>
+  <table>
+  {% for name, value in status.iteritems() %}
+    <tr>
+      <td>{{ name }}</td>
+      <td>{{ value }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+  </div>
+  
   {% for typ, keys in results %}
   <h1>{{ typ }}</h1>
   <table class="timekeys">

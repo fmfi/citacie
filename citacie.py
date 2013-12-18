@@ -18,7 +18,7 @@ from model import Identifier, Publication
 import os
 import util
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import datetime
 
 # csv modul ma nastaveny limit 128KB na field, co je pre nase ucely malo
@@ -192,6 +192,10 @@ def search_citations():
 @app.route('/admin/')
 def admin_status():
   r = config.redis
+  raw_status = r.info()
+  status = OrderedDict()
+  for key in sorted(raw_status.keys()):
+    status[key] = raw_status[key]
   request_keys = [
     'SCOPUS:_get_citations_from_detail_url',
     'SCOPUS:_search_by_author',
@@ -207,7 +211,7 @@ def admin_status():
     pipe.zrevrange('citacie:log:request:{}'.format(key), 0, 25, withscores=True)
   results = pipe.execute()
   
-  return render_template('admin-status.html', results=zip(request_keys, results))
+  return render_template('admin-status.html', status=status, results=zip(request_keys, results))
 
 def admin_request_by_key(key):
   r = config.redis
