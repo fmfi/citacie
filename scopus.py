@@ -163,7 +163,16 @@ class ScopusWebConnection(DataSourceConnection):
     form = HTMLForm(export_form)
     
     form.set_value('exportFormat', 'CSV')
-    form.set_value('view', 'FullDocument')
+    form.set_value('view', 'SpecifyFields')
+    form.check('selectedOtherInformationItems', ['Conference information'])
+    form.check_all('selectedCitationInformationItemsAll')
+    form.check('selectedCitationInformationItems', [
+      'Author(s)', 'Document title', 'Year', 'Source title',
+      'Volume, Issue, Pages', 'Citation count', 'Source and Document Type'
+    ])
+    form.check('selectedBibliographicalInformationItems', [
+      'Serial identifiers (e.g. ISSN)', 'DOI', 'Publisher'
+    ])
     
     headers = {'Referer': export_form_response.url}
     with self.throttler():

@@ -67,6 +67,11 @@ class HTMLForm(object):
       if inp.name == name:
         inp.checked = True
   
+  def check(self, name, values):
+    for inp in self.inputs:
+      if inp.name == name and inp.value in values:
+        inp.checked = True
+  
   def __getitem__(self, name):
     for inp in self.inputs:
       if inp.name == name:
