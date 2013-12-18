@@ -66,7 +66,7 @@ class ThreadingThrottler(object):
       if wait_until:
         if wait_until > deadline:
           break
-        delay = time.time() - wait_until
+        delay = wait_until - time.time()
         if delay > 0:
           self._sleep(delay)
         wait_until = None
@@ -74,7 +74,7 @@ class ThreadingThrottler(object):
         now = time.time()
         
         # zahodime staru historiu
-        while len(self.history) > 0 and self.history[0].finished_before(now - self.period - self.finished_delay):
+        while len(self.history) > 0 and self.history[0].started_before(now - self.period):
           self.history.pop(0)
         
         max_finished = max_or_none([x.finished_time for x in self.history if x != None])
@@ -105,7 +105,7 @@ class ThreadingThrottler(object):
     if timed_out:
       raise ThrottleTimeout()
     if wait_until:
-      delay = time.time() - wait_until
+      delay = wait_until - time.time()
       if delay > 0:
         self._sleep(delay)
       wait_until = None
