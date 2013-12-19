@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
 import threading
+import logging
+
+logger = logging.getLogger('citacie.throttle')
 
 def max_or_none(seq):
   if len(seq) == 0:
@@ -29,6 +32,12 @@ class ThrottleInstance(object):
   def __exit__(self, type, value, traceback):
     self.throttler.finished(self)
     return False
+  
+  def __repr__(self):
+    return 'ThrottleInstance({}, {})'.format(self.started_time, self.finished_time)
+  
+  def __str__(self):
+    return repr(self)
 
 class ThreadingThrottler(object):
   def __init__(self, number, period, min_delay=0, finished_delay=0, period_delay=0, timeout=None, sleep=None):
@@ -67,7 +76,9 @@ class ThreadingThrottler(object):
         if wait_until > deadline:
           break
         delay = wait_until - time.time()
+        logger.debug('calculated delay %f', delay)
         if delay > 0:
+          logger.debug('throttle sleep for %f seconds', delay)
           self._sleep(delay)
         wait_until = None
       with self._lock:
@@ -75,6 +86,7 @@ class ThreadingThrottler(object):
         
         # zahodime staru historiu
         while len(self.history) > 0 and self.history[0].started_before(now - self.period):
+          logger.debug('popping history item from %f', self.history[0].started_time)
           self.history.pop(0)
         
         max_finished = max_or_none([x.finished_time for x in self.history if x != None])
@@ -86,6 +98,7 @@ class ThreadingThrottler(object):
           wait_until = max(min_started + self.period + self.period_delay, max_started + self.min_delay)
           if max_finished:
             wait_until = max(wait_until, max_finished + self.finished_delay)
+          logger.debug('period used %s, waiting until %f', str(self.history), wait_until)
           continue
         
         # kolko treba pockat medzi requestami
@@ -100,6 +113,7 @@ class ThreadingThrottler(object):
         
         result = ThrottleInstance(self, our_request)
         self.history.append(result)
+        logger.debug('adding to history %f', our_request)
         timed_out = False
         break
     if timed_out:
@@ -107,8 +121,10 @@ class ThreadingThrottler(object):
     if wait_until:
       delay = wait_until - time.time()
       if delay > 0:
+        logger.debug('throttle final sleep for %f seconds', delay)
         self._sleep(delay)
       wait_until = None
+    logger.debug('throttle finished')
     return result
   
   def finished(self, inst):
@@ -120,3 +136,13 @@ class ThreadingThrottler(object):
 
 class ThrottleTimeout(BaseException):
   """Vyhodene ked sa po dlhy cas nepodari ziskat throttle zamok"""
+
+if __name__ == '__main__':
+  logger.setLevel(logging.DEBUG)
+  handler = logging.StreamHandler()
+  handler.setLevel(logging.DEBUG)
+  logger.addHandler(handler)
+  t = ThreadingThrottler(2, 10, timeout=20)
+  for i in range(5):
+    with t():
+      pass
