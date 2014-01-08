@@ -111,7 +111,7 @@ class ScopusWebConnection(DataSourceConnection):
     search_form = HTMLForm(search_form_html)
     search_term = surname
     if name:
-      search_term += ', {}'.format(name)
+      search_term += u', {}'.format(name)
     search_form.set_value('searchterm1', search_term)
     search_form.set_value('field1', 'AUTHOR-NAME')
     if year != None:
