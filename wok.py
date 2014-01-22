@@ -532,7 +532,7 @@ class WokWebConnection(DataSourceConnection):
   
   def _parse_citations_list(self, response, encoding=None):
     et = html5lib.parse(response, encoding=encoding, treebuilder="lxml")
-    result_count = int(et.find("//*[@id='footer_formatted_count']").text.strip())
+    result_count = int(et.find("//*[@id='footer_formatted_count']").text.strip().replace(',', ''))
     return result_count
   
   def _get_sid(self):
