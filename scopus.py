@@ -280,7 +280,7 @@ class ScopusWebConnection(DataSourceConnection):
       for link in cite_links:
         if 'title' in link.attrib:
           logging.debug('Trying citation link: %s', link.attrib['title'])
-          if re.match(r'^View details of (?:all \d+ scopus citations|this citation)$', link.attrib['title']):
+          if re.match(r'^View details of (?:all [0-9,]+ scopus citations|this citation)$', link.attrib['title']):
             return link.attrib['href']
       
       return None
