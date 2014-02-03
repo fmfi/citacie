@@ -156,23 +156,24 @@ class ScopusWebConnection(DataSourceConnection):
     return self._download_from_export_form(r_results3, context=context)
   
   def _download_from_export_form(self, export_form_response, context=None):
-    export_url = 'http://www.scopus.com/citation/export.url'
+    export_url = 'http://www.scopus.com/onclick/export.url'
     
     et = html5lib.parse(export_form_response.text, treebuilder="lxml")
     export_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='exportForm']")
     form = HTMLForm(export_form)
     
-    form.set_value('exportFormat', 'CSV')
-    form.set_value('view', 'SpecifyFields')
-    form.check('selectedOtherInformationItems', ['Conference information'])
-    form.check_all('selectedCitationInformationItemsAll')
-    form.check('selectedCitationInformationItems', [
-      'Author(s)', 'Document title', 'Year', 'Source title',
-      'Volume, Issue, Pages', 'Citation count', 'Source and Document Type'
-    ])
-    form.check('selectedBibliographicalInformationItems', [
-      'Serial identifiers (e.g. ISSN)', 'DOI', 'Publisher'
-    ])
+   #form.set_value('exportFormat', 'CSV')
+   #form.set_value('view', 'SpecifyFields')
+   #form.check('selectedOtherInformationItems', ['Conference information'])
+   #form.check_all('selectedCitationInformationItemsAll')
+   #form.check('selectedCitationInformationItems', [
+   #  'Author(s)', 'Document title', 'Year', 'Source title',
+   #  'Volume, Issue, Pages', 'Citation count', 'Source and Document Type'
+   #])
+   #form.check('selectedBibliographicalInformationItems', [
+   #  'Serial identifiers (e.g. ISSN)', 'DOI', 'Publisher'
+   #])
+    form.set_value('oneClickExport', '{"Format":"CSV","SelectedFields":"Link Authors Title Year SourceTitle Volume Issue ArtNo PageStart PageEnd PageCount DocumentType CitedBy Source ISSN ISBN CODE  DOI Publisher ","View":"SpecifyFields"}')
     
     headers = {'Referer': export_form_response.url}
     with self.throttler():
