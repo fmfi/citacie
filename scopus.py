@@ -288,13 +288,12 @@ class ScopusWebConnection(DataSourceConnection):
     
     def get_cited_by_link(et):
       namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
-      cite_links = et.xpath(".//html:a[starts-with(@href, 'http://www.scopus.com/search/submit/citedby.url')]", namespaces=namespaces)
+      cite_links = et.xpath(".//html:a[starts-with(@href, 'http://www.scopus.com/search/submit/citedby.url') and @title='View all citing documents']", namespaces=namespaces)
       
       for link in cite_links:
         if 'title' in link.attrib:
           logging.debug('Trying citation link: %s', link.attrib['title'])
-          if re.match(r'^View details of (?:all [0-9,]+ scopus citations|this citation)$', link.attrib['title']):
-            return link.attrib['href']
+          return link.attrib['href']
       
       return None
     
