@@ -94,7 +94,7 @@ def delayed(fn):
     try:
       return DelayedResult(result=fn())
     except:
-      app.logger.exception('Exception in delayed handler')
+      app.logger.exception('Exception in delayed handler, {}'.format(request.url))
       return DelayedResult(is_error=True)
   return d
 
