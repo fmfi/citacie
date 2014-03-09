@@ -160,8 +160,12 @@ class ScopusWebConnection(DataSourceConnection):
     
     et = html5lib.parse(export_form_response.text, treebuilder="lxml")
     export_form = et.find("//{http://www.w3.org/1999/xhtml}form[@name='exportForm']")
+
+    if export_form is None:
+        return []
+
     form = HTMLForm(export_form)
-    
+
    #form.set_value('exportFormat', 'CSV')
    #form.set_value('view', 'SpecifyFields')
    #form.check('selectedOtherInformationItems', ['Conference information'])
