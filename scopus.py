@@ -16,23 +16,26 @@ import re
 import logging
 
 class ScopusWeb(DataSource):
-  def __init__(self, additional_headers=None, throttler=None):
+  def __init__(self, additional_headers=None, throttler=None, proxies=None):
     if additional_headers == None:
       additional_headers = {'User-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0'}
     self.additional_headers = additional_headers
+    self.proxies = proxies
     if throttler == None:
       throttler = ThreadingThrottler(number=1, period=1, min_delay=1, finished_delay=0.5, timeout=60)
     self.throttler = throttler
     
   def connect(self):
-    return ScopusWebConnection(self.throttler, additional_headers=self.additional_headers)
+    return ScopusWebConnection(self.throttler, additional_headers=self.additional_headers, proxies=self.proxies)
   
 class ScopusWebConnection(DataSourceConnection):
-  def __init__(self, throttler, additional_headers=None):
+  def __init__(self, throttler, additional_headers=None, proxies=None):
     self.additional_headers = additional_headers
     self.session = requests.Session()
     if additional_headers:
       self.session.headers.update(additional_headers)
+    if proxies:
+      self.session.proxies.update(proxies)
     self.throttler = throttler
   
   def search_by_author_old(self, surname, name=None, year=None):
