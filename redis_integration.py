@@ -229,7 +229,7 @@ class RedisLogScopusWeb(ScopusWeb):
     super(RedisLogScopusWeb, self).__init__(*args, **kwargs)
   
   def connect(self):
-    return RedisLogScopusWebConnection(self.redis, self.key, self.throttler, additional_headers=self.additional_headers)
+    return RedisLogScopusWebConnection(self.redis, self.key, self.throttler, additional_headers=self.additional_headers, proxies=self.proxies)
 
 class RedisLogScopusWebConnection(ScopusWebConnection):
   def __init__(self, redis, key, *args, **kwargs):
