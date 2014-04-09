@@ -219,6 +219,12 @@ class ScopusWebConnection(DataSourceConnection):
       return int(x)
     
     for line in csv:
+      # (mrshu): scopus teraz pridava na zaciatok CSV suborov U+FEFF, u nas sa
+      # to prejavi tak, ze Authors to maju pred sebou. Toto je dost smutny
+      # zhackovany fix, ktory by mal aspon fungovat
+
+      line['Authors'] = line[u'\ufeffAuthors']
+
       if line['Authors'] == '[No author name available]':
         authors = []
       else:
