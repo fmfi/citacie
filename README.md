@@ -6,21 +6,8 @@
    sudo apt-get install python-dev libxml2-dev libxslt-dev zlib1g-dev
    virtualenv venv
    source venv/bin/activate
-   pip install suds Flask defusedxml xmlbuilder html5lib lxml requests unicodecsv
-   pip install git+https://github.com/bbangert/retools.git@d91244648a427443d4d887fa1ec9fe34141eba12
+   pip install -r requirements.txt
    ```
-
-   Pre testovacie účely sa dá použiť aj fake zdroj dát, ten potrebuje ďaľšie závislosti:
-
-   ```bash
-   pip install names
-   ```
-
-  Na testovanie streamovanych odpovedi sa da pouzit cherrypy wsgi server
-
-  ```bash
-  pip install cherrypy
-  ```
 
 ## Konfigurácia
 
