@@ -40,18 +40,60 @@ Najprv skopírujme príklad konfiguračného súboru na správne miesto:
 Teraz ho môžeme upraviť
 
    ```bash
-   sudoedit /local_settings.py
+   sudoedit local_settings.py
    ```
 
 Nastaviť sa dajú nasledovné veci:
 
-### TODO zoznam veci co sa daju nastavit
+### Tajný kľúč
+
+`self.secret` musí byť náhodný tajný reťazec, najlepšie je vygenerovať ho automaticky:
+
+```bash
+python -c 'import os; print repr(os.urandom(32))'
+```
+
+toto vypíše pythonový string literál, ktorý sa dá použiť ako tajný kľúč.
+
+### Kam posielať e-maily s výnimkami
+
+Chceme zmeniť nastavenie `ADMINS`, čo je pythonovské pole so zoznamom e-mailových adries kam posielať hlásenia:
+
+```python
+ADMINS = ['email@example.com']
+```
+
+Tiež môžme zmeniť nastavenie SMTP servera v časti, kde sa vyrába SMTP handler:
+
+```python
+mail_handler = SMTPHandler('smtp.example.com',
+    'citacie@example.com',
+    ADMINS, 'Citacie - error')
+```
+
+Argumenty SMTPHandler-a sú hostname SMTP servera, adresa odosielateľa, adresy prijímateľa,
+predmet správy, prípadne nastavenia zabezpečenia komunikácie, viď [Python dokumentáciu SMTP handlera](https://docs.python.org/2/library/logging.handlers.html#smtphandler).
+
+### HTTP proxy
+
+Pre ScopusWeb sa dá nastaviť aká HTTP proxy sa má používať ([viď nastavenie proxies v requests](http://docs.python-requests.org/en/latest/api/#requests.Session.proxies)) a to v konštruktore, napr.:
+
+```python
+ScopusWeb(proxies={'http': 'http://localhost:8001'})
+```
+
+prípadne ako premenná prostredia `HTTP_PROXY="http://localhost:8001"`.
+
+> Poznámka: Requests nepodporuje SOCKS proxy, ale dá sa to obísť použitím samostatnej
+> HTTP proxy, ktorá vie používať SOCKS, ako napríklad
+> [Polipo](http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/).
+> `polipo disableLocalInterface=true disableVia=true socksParentProxy=localhost:8000 proxyPort=8001 diskCacheRoot=''`
 
 ## Konfigurácia Apache2
 
 Vzorový konfig pre Apache2.2
 
-```apache2
+```ApacheConf
 WSGIScriptAlias /ka/citacie /var/www-apps/citacie/wsgi.py
 Alias /ka/citacie/static /var/www-apps/citacie/static
 WSGIDaemonProcess kacitacie user=ka group=ka processes=2 threads=15 display-name={%GROUP} python-path=/var/www-apps/citacie:/var/www-apps/citacie/venv/lib/python2.7/site-packages home=/var/www-apps/citacie
