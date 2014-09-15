@@ -49,7 +49,26 @@ Nastaviť sa dajú nasledovné veci:
 
 ## Konfigurácia Apache2
 
-TODO
+Vzorový konfig pre Apache2.2
+
+```apache2
+WSGIScriptAlias /ka/citacie /var/www-apps/citacie/wsgi.py
+Alias /ka/citacie/static /var/www-apps/citacie/static
+WSGIDaemonProcess kacitacie user=ka group=ka processes=2 threads=15 display-name={%GROUP} python-path=/var/www-apps/citacie:/var/www-apps/citacie/venv/lib/python2.7/site-packages home=/var/www-apps/citacie
+<Directory /var/www-apps/citacie/>
+	WSGIProcessGroup kacitacie
+	# Kvoli chunked response vypnime gzip (inak mod_deflate zrusi chunky)
+	SetEnv no-gzip
+	Order deny,allow
+	Deny from all
+	Allow from 158.195
+</Directory>
+<Location /ka/citacie/admin>
+	CosignAllowPublicAccess Off
+	AuthType Cosign
+	Require user vinar1
+</Location>
+```
 
 # Vývoj aplikácie
 
