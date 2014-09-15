@@ -89,6 +89,36 @@ prípadne ako premenná prostredia `HTTP_PROXY="http://localhost:8001"`.
 > [Polipo](http://www.pps.univ-paris-diderot.fr/~jch/software/polipo/).
 > `polipo disableLocalInterface=true disableVia=true socksParentProxy=localhost:8000 proxyPort=8001 diskCacheRoot=''`
 
+### Redis cache
+
+Aplikácia má v sebe experimentálnu podporu cachovania dát v redise, aj keď sa dlhšiu
+dobu v produkcii nepoužíva (vypli sme redis, lebo boli zapnuté aj logy doň a žralo to priveľa pamäte). Defaultne je redis podpora vypnutá, ak ju chceme zapnúť, treba naimportovať v konfigu na začiatku redis modul:
+
+```python
+from redis_integration import RedisCachedDataSource
+import redis
+```
+
+vyrobiť v `__init__` pripojenie na redis:
+
+```python
+self.redis = redis.StrictRedis(host='localhost', port=6379, db=0)
+```
+
+a vyrobiť cachovanú inštanciu DataSource obalením skutočného DS, napríklad namiesto
+
+```python
+ScopusWeb()
+```
+
+písať v konfigu
+
+```python
+RedisCachedDataSource(self.redis, 'SCOPUS', ScopusWeb())
+```
+
+kde `'SCOPUS'` je namespace kľúčov, ktorý sa v redise používa, pre každý DS by mal byť iný.
+
 ## Konfigurácia Apache2
 
 Vzorový konfig pre Apache2.2
