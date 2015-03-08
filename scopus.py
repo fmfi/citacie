@@ -237,15 +237,15 @@ class ScopusWebConnection(DataSourceConnection):
       pub.pages = make_page_range(empty_to_none(line['Page start']), empty_to_none(line['Page end']))
 
       # (mrshu): z dovodu, ktory nedokazem pochopit teraz SCOPUS vracia cosi
-      # ako 'Cited byLink', kde da dohromady tieto dva fieldy. Nepodarilo sa mi
+      # ako 'DOILink', kde da dohromady tieto dva fieldy. Nepodarilo sa mi
       # prist na to ako to spravit rozumnejsie, tento hack to aspon rozparsuje
-      splits = line['Cited byLink'].split('"')
+      splits = line['DOILink'].split('"')
       if len(splits) > 1:
           line['Link'] = splits[1]
-          line['Cited by'] = splits[0]
+          line['DOI'] = splits[0]
       else:
           line['Link'] = splits[0]
-          line['Cited by'] = None
+          line['DOI'] = None
 
       pub.times_cited = empty_to_none(line['Cited by'])
       pub.article_no = empty_to_none(line['Art. No.'])
