@@ -584,9 +584,9 @@ class WokWebConnection(DataSourceConnection):
       with self.throttler():
         r2 = self.session.post('http://apps.webofknowledge.com/OutboundService.do?action=go&&', data=data, headers=headers)
       
-      self._log_tab_delimited(cite_url, origin_ut, r2.text)
+      self._log_tab_delimited(cite_url, origin_ut, r2.content)
       
-      for pub in self._parse_tab_delimited(r2.text):
+      for pub in self._parse_tab_delimited(r2.content):
         yield pub
   
   def _parse_tab_delimited(self, text):
