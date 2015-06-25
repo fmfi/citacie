@@ -109,7 +109,7 @@ class ScopusWebConnection(DataSourceConnection):
     
     et = html5lib.parse(r_form.text, treebuilder="lxml")
     namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
-    search_form_html = et.find("//{http://www.w3.org/1999/xhtml}form[@name='BasicValidatedSearchForm']")
+    search_form_html = et.find("//{http://www.w3.org/1999/xhtml}form[@name='SearchResultsForm']")
     
     search_form = HTMLForm(search_form_html)
     search_term = surname
