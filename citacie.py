@@ -85,17 +85,18 @@ class FlushExtension(Extension):
 app.jinja_env.add_extension(FlushExtension)
 
 class DelayedResult(object):
-  def __init__(self, result=None, is_error=False):
+  def __init__(self, result=None, is_error=False, error='Error!'):
     self.is_error = is_error
     self.result = result
+    self.error = error
 
 def delayed(fn):
   def d():
     try:
       return DelayedResult(result=fn())
-    except:
+    except Exception as e:
       app.logger.exception('Exception in delayed handler, {}'.format(request.url))
-      return DelayedResult(is_error=True)
+      return DelayedResult(is_error=True, error=str(e))
   return d
 
 @app.route('/')

@@ -10,15 +10,15 @@
 {% set delayed = get_results() %}
 {{ macros.hide_loader() }}
 {% if delayed.is_error %}
-  <div class="centerbox"><div class="error">Error while processing the request</div></div>
+  <div class="centerbox"><div class="error">Error while processing the request<br /><small> {{ delayed.error }} </small></div></div>
 {% elif delayed.result %}
   <form method="POST" action="{{ url_for('search_citations') }}" target="_blank" onsubmit="this.submit();this.reset();return false;">
   <div class="results">
-  
+
   {% for result in delayed.result %}
     <div class="result"><div class="centerbox">
       <div class="result-title"><input type="checkbox" name="publication" value="{{ result.serialized }}" /> {{ result.title }}</div>
-      
+
       {{ macros.result_fields(result) }}
     </div></div>
   {% endfor %}

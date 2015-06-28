@@ -9,7 +9,7 @@ Citation search{% endblock %}
 {% for pub in query_pubs %}
   <div class="query">
     <div class="result-title">{{ pub.title }}</div>
-    
+
     {{ macros.result_fields(pub) }}
   </div>
 {% endfor %}
@@ -19,7 +19,7 @@ Citation search{% endblock %}
 {% set delayed = get_results() %}
 {{ macros.hide_loader() }}
 {% if delayed.is_error %}
-  <div class="centerbox"><div class="error">Error while processing the request</div></div>
+  <div class="centerbox"><div class="error">Error while processing the request<br /><small> {{ delayed.error }} </small></div></div>
 {% elif delayed.result %}
   <div class="results">
     <div class="centerbox">
@@ -32,13 +32,13 @@ Citation search{% endblock %}
             {%- if loop.last %}
               and
             {% else -%}
-              , 
+              ,
             {% endif -%}
           {% endif -%}
           {{ index_count }} from {{ index }}
         {%- endfor -%}
         )
-      </div>  
+      </div>
     {% endif %}
     </div>
   {% if delayed.result.citations %}
@@ -99,7 +99,7 @@ Citation search{% endblock %}
           Art. No. {{ result.article_no }}
           {%- endif -%}
           {%- if result.article_no and result.pages -%}
-          , 
+          ,
           {% endif %}
           {% if result.pages %}
           s. {{ result.pages }}
@@ -122,7 +122,7 @@ Citation search{% endblock %}
         </ul>
       </div>
       {% endif %}
-        
+
         {% if result.errors %}
         <div class="result-errors">
           <ul>
@@ -132,14 +132,14 @@ Citation search{% endblock %}
           </ul>
         </div>
         {% endif %}
-        
+
         {#
         {% if result.merge_sources %}
         <div class="result-merge-sources">
           {% for source in result.merge_sources %}
             <div class="result-merge-source">
               <div class="result-title">{{ source.title }}</div>
-              
+
               {{ macros.result_fields(source) }}
             </div>
           {% endfor %}
