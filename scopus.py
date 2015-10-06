@@ -222,7 +222,17 @@ class ScopusWebConnection(DataSourceConnection):
       if line['Authors'] == '[No author name available]':
         authors = []
       else:
-        authors = Author.parse_sn_first_list(line['Authors'], separator=u',')
+        # (mrshu): SCOPUS sa rozhodol oddelovat ako priezvyska, tak aj
+        # jednotlive mena autorov ciarkov. Toto robi problemy, preto
+        # preprocessujeme zoznam autorov, ktory vyzera napriklad
+        #
+        # Brejová, B., Brown, D.G., Li, M., Vinař, T.
+        #
+        # najdeme, konce celych mien, a ciarku v tomto pripade nahradime
+        # bodkociarkou. Nasledne potom funkcii, ktora mena autorov spracovava
+        # dame vediet, ze je ako separator pouzita bodkociarka.
+        line['Authors'] = re.sub(r'\.,', ';', line['Authors'])
+        authors = Author.parse_sn_first_list(line['Authors'], separator=u';')
       pub = Publication(line['Title'], authors, to_num(line['Year']))
       source_title = empty_to_none(line['Source title'])
       if source_title:
