@@ -335,7 +335,7 @@ class ScopusWebConnection(DataSourceConnection):
 
 if __name__ == '__main__':
   with ScopusWeb().connect() as conn:
-    #for pub in conn.search_by_author('Vinar', name='T'):
-    with open('sc-csv.csv', 'r') as f:
+    #with open('sc-csv.csv', 'r') as f:
+    for pub in conn.search_by_author('Vinar', name='T'):
       for pub in conn._parse_csv(f.read()):
         print pub
