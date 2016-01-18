@@ -48,6 +48,8 @@ class ScopusWebConnection(DataSourceConnection):
                                       names=[author['given-name']]))
             year = int(entry['prism:coverDate'].split('-')[0])
             pub = Publication(entry['dc:title'], authors, year)
+            pub.published_in = entry['prism:publicationName']
+            pub.times_cited = entry['citedby-count']
             yield pub
 
     def search_citations(self, publications):
