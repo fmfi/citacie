@@ -9,10 +9,9 @@ from collections import OrderedDict
 from urllib import urlencode, quote
 import requests
 from requests.utils import add_dict_to_cookiejar
-import html5lib
-from urlparse import urlparse, parse_qs
 import re
-import logging
+
+INCLUDING_RE = r' \(including subseries [^)]+\)'
 
 
 class ScopusWeb(DataSource):
@@ -28,6 +27,7 @@ class ScopusWebConnection(DataSourceConnection):
         self.api_key = api_key
 
     def search_by_author(self, surname, name=None, year=None):
+
         url = 'https://api.elsevier.com/content/search/scopus'
 
         query = 'authlastname({})'.format(surname)
@@ -41,15 +41,66 @@ class ScopusWebConnection(DataSourceConnection):
         }
         raw_json = requests.get(url, params=params).json()
         entries = raw_json['search-results']['entry']
+        for pub in self.entries_to_publications(entries):
+            yield pub
+
+    def authors_from_json(self, json):
+        return [Author(surname=author['surname'], names=[author['given-name']])
+                for author in json]
+
+    def entries_to_publications(self, entries):
+        """Prerobi data zo SCOPUS json reprezentacie na internu Publication."""
+
+        def empty_to_none(s):
+            if s is None:
+                return None
+            s = s.strip()
+            if len(s) == 0:
+                return None
+            return s
+
+        def exists_to_none(d, key):
+            if key in d:
+                return empty_to_none(d[key])
+            else:
+                return None
+
+        def append_identifier(d, key, obj, type):
+            id = exists_to_none(d, key)
+            if id:
+                obj.identifiers.append(Identifier(id, type=type))
+
         for entry in entries:
-            authors = []
-            for author in entry['author']:
-                authors.append(Author(surname=author['surname'],
-                                      names=[author['given-name']]))
-            year = int(entry['prism:coverDate'].split('-')[0])
-            pub = Publication(entry['dc:title'], authors, year)
-            pub.published_in = entry['prism:publicationName']
-            pub.times_cited = entry['citedby-count']
+            authors = self.authors_from_json(entry['author'])
+            year = empty_to_none(entry['prism:coverDate'])
+            if year:
+                year = int(year.split('-')[0])
+            pub = Publication(empty_to_none(entry['dc:title']), authors, year)
+            pub.times_cited = empty_to_none(entry['citedby-count'])
+
+            source_title = empty_to_none(entry['prism:publicationName'])
+            if source_title:
+                source_title, replacements = re.subn(INCLUDING_RE,
+                                                     '',
+                                                     source_title)
+                source_title = source_title.strip()
+                if replacements:
+                    pub.series = source_title
+                else:
+                    pub.published_in = source_title
+
+            pub.pages = exists_to_none(entry, 'prism:pageRange')
+            pub.volume = exists_to_none(entry, 'prism:volume')
+            pub.issue = exists_to_none(entry, 'prism:issueIdentifier')
+            pub.pages = exists_to_none(entry, 'prism:pageRange')
+
+            append_identifier(entry, 'prism:doi', pub, 'DOI')
+            append_identifier(entry, 'prism:isbn', pub, 'ISBN')
+            append_identifier(entry, 'prism:issn', pub, 'ISSN')
+            append_identifier(entry, 'eid', pub, 'SCOPUS')
+
+            pub.indexes.append(Index('SCOPUS', type='SCOPUS'))
+
             yield pub
 
     def search_citations(self, publications):
