@@ -64,6 +64,9 @@ class ScopusAPIConnection(DataSourceConnection):
         if name is not None:
             query += ' AND authfirst({})'.format(name)
 
+        if year is not None:
+            query += ' AND PUBYEAR IS {}'.format(year)
+
         for pub in self.publications_from_query(query):
             yield pub
 
