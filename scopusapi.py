@@ -26,13 +26,8 @@ class ScopusWebConnection(DataSourceConnection):
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def search_by_author(self, surname, name=None, year=None):
-
+    def publications_from_query(self, query):
         url = 'https://api.elsevier.com/content/search/scopus'
-
-        query = 'authlastname({})'.format(surname)
-        if name is not None:
-            query += ' AND authfirst({})'.format(name)
 
         params = {
             'apiKey': self.api_key,
@@ -58,6 +53,14 @@ class ScopusWebConnection(DataSourceConnection):
             entries = raw_json['search-results']['entry']
             for pub in self.entries_to_publications(entries):
                 yield pub
+
+    def search_by_author(self, surname, name=None, year=None):
+        query = 'authlastname({})'.format(surname)
+        if name is not None:
+            query += ' AND authfirst({})'.format(name)
+
+        for pub in self.publications_from_query(query):
+            yield pub
 
     def authors_from_json(self, json):
         return [Author(surname=author['surname'], names=[author['given-name']])
@@ -125,26 +128,40 @@ class ScopusWebConnection(DataSourceConnection):
 
             yield pub
 
+    def search_citations_by_eid(self, eid):
+        """Vrati iterator vracajuci zoznam publikacii, ktore cituju dane
+        eid."""
+        query = "refeid('{}')".format(surname)
+        for pub in self.publications_from_query(query):
+            yield pub
+
     def search_citations(self, publications):
         """Vrati iterator vracajuci zoznam publikacii, ktore cituju publikacie
            v zozname publications
         """
-        raise NotImplemented
+        for publication in publications:
+            eid = list(Identifier.find_by_type(publication.identifiers,
+                                               'SCOPUS'))
+            if len(eid) == 0:
+                continue
+            eid = eid[0].value
+
+            for pub in search_citations_by_eid(eid):
+                yield pub
 
     def assign_indexes(self, publications):
         """Zisti a nastavi, v akych indexoch sa publikacie nachadzaju
         """
-        raise NotImplemented
-
-    def assign_indexes(self, publications):
-        """Zisti a nastavi, v akych indexoch sa publikacie nachadzaju
-        """
-        raise NotImplemented
+        pass
 
     def close(self):
         pass
 
 if __name__ == '__main__':
     with ScopusWeb(api_key='').connect() as conn:
-        for pub in conn.search_by_author('Vinar', name='T'):
+        pubs = list(conn.search_by_author('Vinar', name='T'))
+        for pub in pubs:
+            print pub
+        print "Citations:"
+        for pub in conn.search_citations(pubs):
             print pub
