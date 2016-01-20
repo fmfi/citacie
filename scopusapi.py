@@ -44,6 +44,21 @@ class ScopusWebConnection(DataSourceConnection):
         for pub in self.entries_to_publications(entries):
             yield pub
 
+        def find_next_url(links):
+            for link in links:
+                if link['@ref'] == 'next':
+                    return link['@href']
+            return None
+
+        while True:
+            next_link = find_next_url(raw_json['search-results']['link'])
+            if next_link is None:
+                break
+            raw_json = requests.get(next_link).json()
+            entries = raw_json['search-results']['entry']
+            for pub in self.entries_to_publications(entries):
+                yield pub
+
     def authors_from_json(self, json):
         return [Author(surname=author['surname'], names=[author['given-name']])
                 for author in json]
