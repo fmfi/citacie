@@ -35,6 +35,11 @@ class ScopusWebConnection(DataSourceConnection):
             'query': query
         }
         raw_json = requests.get(url, params=params).json()
+        search_results = raw_json['search-results']
+        total_results = int(search_results['opensearch:totalResults'])
+        if total_results == 0:
+            return
+
         entries = raw_json['search-results']['entry']
         for pub in self.entries_to_publications(entries):
             yield pub
@@ -63,7 +68,13 @@ class ScopusWebConnection(DataSourceConnection):
             yield pub
 
     def authors_from_json(self, json):
-        return [Author(surname=author['surname'], names=[author['given-name']])
+        def none_to_emptystr(s):
+            if s is None:
+                return ''
+            return s
+
+        return [Author(surname=author['surname'],
+                       names=[none_to_emptystr(author['given-name'])])
                 for author in json]
 
     def entries_to_publications(self, entries):
@@ -96,7 +107,12 @@ class ScopusWebConnection(DataSourceConnection):
                     obj.identifiers.append(Identifier(ids, type=type))
 
         for entry in entries:
-            authors = self.authors_from_json(entry['author'])
+            author_count = int(entry['author-count']['$'])
+            if author_count == 0:
+                authors = []
+            else:
+                authors = self.authors_from_json(entry['author'])
+
             year = empty_to_none(entry['prism:coverDate'])
             if year:
                 year = int(year.split('-')[0])
@@ -131,7 +147,7 @@ class ScopusWebConnection(DataSourceConnection):
     def search_citations_by_eid(self, eid):
         """Vrati iterator vracajuci zoznam publikacii, ktore cituju dane
         eid."""
-        query = "refeid('{}')".format(surname)
+        query = "refeid('{}')".format(eid)
         for pub in self.publications_from_query(query):
             yield pub
 
@@ -146,7 +162,7 @@ class ScopusWebConnection(DataSourceConnection):
                 continue
             eid = eid[0].value
 
-            for pub in search_citations_by_eid(eid):
+            for pub in self.search_citations_by_eid(eid):
                 yield pub
 
     def assign_indexes(self, publications):
