@@ -76,14 +76,21 @@ class ScopusWebConnection(DataSourceConnection):
 
         def exists_to_none(d, key):
             if key in d:
-                return empty_to_none(d[key])
+                if type(d[key]) is list:
+                    return [empty_to_none(x['$']) for x in d[key]]
+                else:
+                    return empty_to_none(d[key])
             else:
                 return None
 
         def append_identifier(d, key, obj, type):
-            id = exists_to_none(d, key)
-            if id:
-                obj.identifiers.append(Identifier(id, type=type))
+            ids = exists_to_none(d, key)
+            if ids:
+                if isinstance(ids, list):
+                    for id in ids:
+                        obj.identifiers.append(Identifier(id, type=type))
+                else:
+                    obj.identifiers.append(Identifier(ids, type=type))
 
         for entry in entries:
             authors = self.authors_from_json(entry['author'])
