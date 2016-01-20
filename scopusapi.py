@@ -14,15 +14,15 @@ import re
 INCLUDING_RE = r' \(including subseries [^)]+\)'
 
 
-class ScopusWeb(DataSource):
+class ScopusAPI(DataSource):
     def __init__(self, api_key):
         self.api_key = api_key
 
     def connect(self):
-        return ScopusWebConnection(api_key=self.api_key)
+        return ScopusAPIConnection(api_key=self.api_key)
 
 
-class ScopusWebConnection(DataSourceConnection):
+class ScopusAPIConnection(DataSourceConnection):
     def __init__(self, api_key):
         self.api_key = api_key
 
@@ -174,7 +174,7 @@ class ScopusWebConnection(DataSourceConnection):
         pass
 
 if __name__ == '__main__':
-    with ScopusWeb(api_key='').connect() as conn:
+    with ScopusAPI(api_key='').connect() as conn:
         pubs = list(conn.search_by_author('Vinar', name='T'))
         for pub in pubs:
             print pub
