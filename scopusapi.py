@@ -26,6 +26,12 @@ class ScopusAPIConnection(DataSourceConnection):
     def __init__(self, api_key):
         self.api_key = api_key
 
+    def find_next_url(self, links, ref='next'):
+        for link in links:
+            if link['@ref'] == ref:
+                return link['@href']
+        return None
+
     def publications_from_query(self, query):
         url = 'https://api.elsevier.com/content/search/scopus'
 
@@ -44,14 +50,8 @@ class ScopusAPIConnection(DataSourceConnection):
         for pub in self.entries_to_publications(entries):
             yield pub
 
-        def find_next_url(links):
-            for link in links:
-                if link['@ref'] == 'next':
-                    return link['@href']
-            return None
-
         while True:
-            next_link = find_next_url(raw_json['search-results']['link'])
+            next_link = self.find_next_url(raw_json['search-results']['link'])
             if next_link is None:
                 break
             raw_json = requests.get(next_link).json()
@@ -132,6 +132,11 @@ class ScopusAPIConnection(DataSourceConnection):
                     pub.series = source_title
                 else:
                     pub.published_in = source_title
+
+            url = self.find_next_url(entry['link'], ref='scopus')
+            pub.source_urls.append(URL(url,
+                                       type='SCOPUS',
+                                       description='SCOPUS'))
 
             pub.pages = exists_to_none(entry, 'prism:pageRange')
             pub.volume = exists_to_none(entry, 'prism:volume')
