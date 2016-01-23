@@ -138,6 +138,13 @@ class ScopusAPIConnection(DataSourceConnection):
                                        type='SCOPUS',
                                        description='SCOPUS'))
 
+            citedby_url = = self.find_next_url(entry['link'],
+                                               ref='scopus-citedby')
+            if citedby_url is not None:
+                pub.cite_urls.append(URL(citedby_url,
+                                         type='SCOPUS',
+                                         description='SCOPUS'))
+
             pub.pages = exists_to_none(entry, 'prism:pageRange')
             pub.volume = exists_to_none(entry, 'prism:volume')
             pub.issue = exists_to_none(entry, 'prism:issueIdentifier')
