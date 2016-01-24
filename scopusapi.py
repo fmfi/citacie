@@ -60,9 +60,10 @@ class ScopusAPIConnection(DataSourceConnection):
                 yield pub
 
     def search_by_author(self, surname, name=None, year=None):
-        query = 'authlastname({})'.format(surname)
+        query = '{}'.format(surname)
         if name is not None:
-            query += ' AND authfirst({})'.format(name)
+            query += ', {}'.format(name)
+        query = 'AUTHOR-NAME({})'.format(query)
 
         if year is not None:
             query += ' AND PUBYEAR IS {}'.format(year)
