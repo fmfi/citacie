@@ -62,6 +62,8 @@ class ScopusAPIConnection(DataSourceConnection):
     def search_by_author(self, surname, name=None, year=None):
         query = '{}'.format(surname)
         if name is not None:
+            if len(name) > 0:
+                name = name[0]
             query += ', {}'.format(name)
         query = 'AUTHOR-NAME({})'.format(query)
 
