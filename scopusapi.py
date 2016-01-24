@@ -138,8 +138,8 @@ class ScopusAPIConnection(DataSourceConnection):
                                        type='SCOPUS',
                                        description='SCOPUS'))
 
-            citedby_url = = self.find_next_url(entry['link'],
-                                               ref='scopus-citedby')
+            citedby_url = self.find_next_url(entry['link'],
+                                             ref='scopus-citedby')
             if citedby_url is not None:
                 pub.cite_urls.append(URL(citedby_url,
                                          type='SCOPUS',
