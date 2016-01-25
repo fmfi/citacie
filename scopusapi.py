@@ -125,7 +125,7 @@ class ScopusAPIConnection(DataSourceConnection):
             pub = Publication(empty_to_none(entry['dc:title']), authors, year)
             pub.times_cited = empty_to_none(entry['citedby-count'])
 
-            source_title = empty_to_none(entry['prism:publicationName'])
+            source_title = exists_to_none(entry, 'prism:publicationName')
             if source_title:
                 source_title, replacements = re.subn(INCLUDING_RE,
                                                      '',
