@@ -54,6 +54,10 @@ class ScopusAPIConnection(DataSourceConnection):
             next_link = self.find_next_url(raw_json['search-results']['link'])
             if next_link is None:
                 break
+            # (mrshu): hotfix pre scopus, z nejakeho dovodu ocakavaju, ze HTTPS
+            # pojde aj na porte 80
+            next_link = next_link.replace('api.elsevier.com:80',
+                                          'api.elsevier.com:443')
             raw_json = requests.get(next_link).json()
             entries = raw_json['search-results']['entry']
             for pub in self.entries_to_publications(entries):
