@@ -186,8 +186,10 @@ class WokWSConnection(DataSourceConnection):
         return None
       if len(l) == 0:
         return None
-      if len(l) > 1:
-        raise ValueError('Expecting single value only for {}, publication id {}'.format(label, wokid), str(record))
+      # (mrshu): Akokolvek divne sa to moze zdat, WoS ma pre niektore clanky
+      # viac ako jedno cislo clanku
+      #if len(l) > 1:
+      #  raise ValueError('Expecting single value only for {}, publication id {}'.format(label, wokid), str(record))
       return unicode(l[0])
     
     def extract_concat(group, label, delim=u'|'):
