@@ -121,7 +121,8 @@ class ScopusAPIConnection(DataSourceConnection):
             if author_count == 0:
                 authors = []
             else:
-                authors = self.authors_from_json(entry['author'])
+                authors_in_json = entry.get('author', [])
+                authors = self.authors_from_json(authors_in_json)
 
             year = empty_to_none(entry['prism:coverDate'])
             if year:
